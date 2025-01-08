@@ -1,4 +1,3 @@
-import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 import 'package:ejazapp/data/models/authors.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/routes.dart';
@@ -7,7 +6,6 @@ import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:get/get.dart';
-import 'package:loading_animation_widget/loading_animation_widget.dart';
 import 'package:provider/provider.dart';
 
 class ListAuthors extends StatefulWidget {

@@ -1,13 +1,10 @@
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/constants.dart';
-import 'package:ejazapp/helpers/routes.dart';
-import 'package:ejazapp/pages/home/collection/collection.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/widgets/book_card.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_icons/flutter_icons.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 

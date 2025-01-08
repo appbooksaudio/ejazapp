@@ -17,7 +17,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart' as prefix;
 import 'package:get/get_core/get_core.dart';
 import 'package:just_audio/just_audio.dart';
-import 'package:path/path.dart';
 import 'package:provider/provider.dart';
 import 'package:rxdart/rxdart.dart';
 

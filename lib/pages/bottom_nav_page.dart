@@ -1,7 +1,6 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 import 'package:ejazapp/helpers/colors.dart';
-import 'package:ejazapp/pages/book_scanner/chat_ai.dart';
 import 'package:ejazapp/pages/for_you/explore.dart';
 import 'package:ejazapp/pages/home/home_page.dart';
 import 'package:ejazapp/pages/playlist/create_show_list.dart';

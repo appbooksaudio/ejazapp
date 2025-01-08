@@ -20,8 +20,7 @@ import 'package:get/get.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
-import 'package:mailer/mailer.dart';
-import 'package:mailer/smtp_server.dart';
+
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
 
@@ -1269,54 +1268,3 @@ CloseRawSnakerbar() {
   }
 }
 
-
-// import 'package:sendgrid_mailer/sendgrid_mailer.dart';
-
-// main() async {
-//   final mailer = Mailer('<<YOUR_API_KEY>>');
-//   final toAddress = Address('to@example.com');
-//   final fromAddress = Address('from@example.com');
-//   final content = Content('text/plain', 'Hello World!');
-//   final subject = 'Hello Subject!';
-//   final personalization = Personalization([toAddress]);
-
-//   final email =
-//       Email([personalization], fromAddress, subject, content: [content]);
-//   mailer.send(email).then((result) {
-//     // ...
-//   });
-// }
-
-// ignore: always_declare_return_types, inference_failure_on_function_return_type, inference_failure_on_untyped_parameter, non_constant_identifier_names, type_annotate_public_apis
-SendEmailException(body, ApiName) async {
-  String username = 'downloadejaz@gmail.com';
-  String password = 'Slah@2015*';
-
-  final smtpServer = gmail(username, password);
-  // Create our message.
-  final message = Message()
-    ..from = Address(username, 'Hsini Walid [web manager]')
-    ..recipients.add('downloadejaz@gmail.com')
-    ..subject = 'Mailer Exception :: 😀 :: ${DateTime.now()}'
-    ..text = 'This is the plain text.\nThis is line 2 of the text part.'
-    ..html = "<h1>Test</h1>\n<p>Hey! Here's some HTML content</p>";
-  // Create a smtp client that will persist the connection
-
-  try {
-    final sendReport = await send(message, smtpServer);
-    print('Message sent: ' + sendReport.toString());
-  } on MailerException catch (e) {
-    print('Message not sent.');
-    for (var p in e.problems) {
-      print('Problem: ${p.code}: ${p.msg}');
-    }
-  }
-
-  // Sending multiple messages with the same connection
-  //
-  var connection = PersistentConnection(smtpServer);
-  // Send the first message
-  await connection.send(message);
-  // close the connection
-  await connection.close();
-}

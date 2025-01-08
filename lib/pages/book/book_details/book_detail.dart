@@ -23,7 +23,6 @@ import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
-import 'package:google_fonts/google_fonts.dart';
 import 'package:hive/hive.dart';
 import 'package:octo_image/octo_image.dart';
 import 'package:provider/provider.dart';
