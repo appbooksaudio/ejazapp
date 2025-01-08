@@ -1269,11 +1269,6 @@ CloseRawSnakerbar() {
   }
 }
 
-//*************  SendEmailException ******************/
-
-// "ApiKey": "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", //EjazNotifier
-// "SenderEmail": "fjalali@hbku.edu.qa",//downlaodejaz@gmail.com // password:Hbkupressendgrid@2024
-// "SenderName": "Ejaz Admin"
 
 // import 'package:sendgrid_mailer/sendgrid_mailer.dart';
 
