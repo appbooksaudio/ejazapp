@@ -1,6 +1,7 @@
 import 'package:audio_service/audio_service.dart';
 import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 import 'package:ejazapp/helpers/colors.dart';
+import 'package:ejazapp/pages/chat_list/chat_list_screen.dart';
 import 'package:ejazapp/pages/for_you/explore.dart';
 import 'package:ejazapp/pages/home/home_page.dart';
 import 'package:ejazapp/pages/playlist/create_show_list.dart';
@@ -87,6 +88,7 @@ class _BottomNavPageState extends State<BottomNavPage> {
              // GeminiChat(),
              // AddPost(),
               //ListBook(),
+              ChatListScreen(),
               Create_showList(),
               // OrderPage(),
               ProfilePage(),
@@ -261,6 +263,12 @@ class _BottomNavPageState extends State<BottomNavPage> {
 //               label:AppLocalizations.of(context)!.chatai,
              
 //             ),
+            BottomNavigationBarItem(
+              icon:Container(
+                  padding: EdgeInsets.symmetric(vertical: 7),
+                  child: Icon(Feather.message_circle) ),
+              label:AppLocalizations.of(context)!.message,
+            ),
             
             BottomNavigationBarItem(
               icon: Container(

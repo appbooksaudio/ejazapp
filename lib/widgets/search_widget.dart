@@ -9,7 +9,7 @@ import 'package:provider/provider.dart';
 class SearchWidget extends StatefulWidget {
   final String text;
   final ValueChanged<String> onChanged;
-  final String hintText;
+  final String? hintText;
 
   const SearchWidget({
     Key? key,
@@ -66,7 +66,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                         },
                       )
                     : null,
-                hintText:
+                hintText:widget.hintText??
                     AppLocalizations.of(context)!.search_your_favorite_book,
                 contentPadding: localprovider.localelang!.languageCode == 'ar'
                     ? widget.text.isEmpty

@@ -155,10 +155,11 @@ class _CommentPageState extends State<CommentPage> {
                       userName:
                           doc['name'] != null ? doc['name'] as String : '',
                       content: doc['text'] != null ? doc['text'] as String : '',
-                      reply: doc['reply'] as List,
+                      // reply: doc['reply'] as List,
                       time: doc['timestamp'] != null
                           ? (doc['timestamp'] as Timestamp).toDate()
-                          : Date), //
+                          : Date
+                  ), //
                   [
                     for (var i = 0; i < ((doc['reply'].length) as num); i++)
                       Comment(
@@ -172,11 +173,12 @@ class _CommentPageState extends State<CommentPage> {
                           content: doc['reply'][i]['text'] != null
                               ? doc['reply'][i]['text'] as String
                               : '',
-                          reply: doc['reply'] as List,
+                          // reply: doc['reply'] as List,
                           time: doc['reply'][i]['timestamp'] != null
                               ? (doc['reply'][i]['timestamp'] as Timestamp)
                                   .toDate()
-                              : Date),
+                              : Date
+                      ),
                   ],
                   treeThemeData: const TreeThemeData(
                       lineColor: Colors.transparent, lineWidth: 3),
@@ -233,7 +235,7 @@ class _CommentPageState extends State<CommentPage> {
                                                 : ColorDark.background),
                                   ),
                                   Text(
-                                    '${DateFormat('dd-MMM-yyy – kk:mm').format(data.time)}', //Date.toString().split(' ')[0],
+                                    '${DateFormat('dd-MMM-yyy – kk:mm').format(data.time??DateTime.now())}', //Date.toString().split(' ')[0],
                                     style: TextStyle(
                                         color: Colors.blue[700], fontSize: 10),
                                   )
@@ -331,7 +333,7 @@ class _CommentPageState extends State<CommentPage> {
                                                 : ColorDark.background),
                                   ),
                                   Text(
-                                    '${DateFormat('dd-MMM-yyy – kk:mm').format(data.time)}', //.toString().split(' ')[0]}',
+                                    '${DateFormat('dd-MMM-yyy – kk:mm').format(data.time??DateTime.now())}', //.toString().split(' ')[0]}',
                                     style: TextStyle(color: Colors.blue[700]),
                                   )
                                 ],

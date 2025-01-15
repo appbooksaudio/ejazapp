@@ -546,6 +546,7 @@ class _HomePageState extends State<HomePage>
           controller: _scrollViewController,
           physics: const ScrollPhysics(),
           child: Column(
+
             crossAxisAlignment: CrossAxisAlignment.start,
             children: <Widget>[
               //  const SizedBox(height: 10),
