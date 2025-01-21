@@ -1,14 +1,17 @@
 import 'package:ejazapp/helpers/colors.dart';
-import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/pages/chat_list/sample_data.dart';
 import 'package:ejazapp/widgets/search_widget.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import '../../controllers/chat/chat_controllers.dart';
+import '../../helpers/routes.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/chat_list/chat_category_button.dart';
 import '../../widgets/chat_list/chat_list_tile.dart';
 import '../../widgets/rectangularButton.dart';
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});
@@ -19,6 +22,22 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen> {
   int chatCategoryCurrentIndex = 1;
+  late ChatController chatController;
+
+  @override
+  void initState() {
+    super.initState();
+    chatController = Get.put(ChatController());
+    chatController.initHubConnection();
+    initHubConnection();
+  }
+  initHubConnection() async {
+    await chatController.hubConnection.start();
+    chatController.hubConnection.invoke('SendMessage', args: ['name', 'test']);
+    chatController.hubConnection.on('ReceiveMessage', (arguments) {
+      print(arguments);
+    },);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -26,6 +45,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
     final theme = Theme.of(context);
 
     Color dividerColor=(themeProv.isDarkTheme??false)?ColorDark.divider:ColorLight.divider;
+
+    final locale= AppLocalizations.of(context)!;
 
     return Scaffold(
       body: SafeArea(
@@ -41,22 +62,22 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 children: [
                   Row(
                     children: [
-                      RectangularButton(
+                      SquareButton(
                         child: Icon(Icons.more_horiz),
                       ),
                       const Spacer(),
-                      RectangularButton(
+                      SquareButton(
                           child: Icon(
                         CupertinoIcons.archivebox_fill,
                       )),
                       const SizedBox(
                         width: 12,
                       ),
-                      RectangularButton(child: Icon(CupertinoIcons.camera_fill)),
+                      SquareButton(child: Icon(CupertinoIcons.camera_fill)),
                       const SizedBox(
                         width: 12,
                       ),
-                      RectangularButton(
+                      SquareButton(
                         child: Icon(
                           Icons.add,
                           color: Colors.white,
@@ -69,7 +90,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     height: 24,
                   ),
                   Text(
-                    'Ejaz Chat',
+                      locale.ejazChat,
                     style: theme.textTheme.headlineMedium?.copyWith(fontSize: 20),
                   ),
                   const SizedBox(
@@ -91,7 +112,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                             child: SearchWidget(
                                 text: '',
                                 onChanged: (value) {},
-                                hintText: 'Search Chat'),
+                                hintText: locale.search),
                           ),
                         ],
                       )),
@@ -102,7 +123,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     spacing: 12,
                     children: [
                       ChatCategoryButton(
-                        text: 'All Chat',
+                        text: locale.allChat,
                         isSelected: chatCategoryCurrentIndex == 1,
                         action: () {
                           setState(() {
@@ -111,7 +132,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         },
                       ),
                       ChatCategoryButton(
-                        text: 'Unread Chat',
+                        text: locale.unreadChat,
                         isSelected: chatCategoryCurrentIndex == 2,
                         action: () {
                           setState(() {
@@ -120,7 +141,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         },
                       ),
                       ChatCategoryButton(
-                        text: 'Group Chat',
+                        text: locale.groupChat,
                         isSelected: chatCategoryCurrentIndex == 3,
                         action: () {
                           setState(() {
@@ -143,11 +164,21 @@ class _ChatListScreenState extends State<ChatListScreen> {
                   child: ListView.separated(
                     padding: EdgeInsets.symmetric(vertical: 0,),
                     itemBuilder: (context, index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(vertical:17,horizontal: 16),
-                        child: ChatListTile(
-                          index: index,
-                          user: chats[index],
+                      return InkWell(
+                        onTap: () {
+                          Get.toNamed<dynamic>(
+                            arguments: {
+                              "user":chats[index]
+                            },
+                            Routes.chat,
+                          );
+                        },
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(vertical:17,horizontal: 16),
+                          child: ChatListTile(
+                            index: index,
+                            user: chats[index],
+                          ),
                         ),
                       );
                     },

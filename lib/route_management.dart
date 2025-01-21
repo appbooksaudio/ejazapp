@@ -1,3 +1,4 @@
+import 'package:camera/camera.dart';
 import 'package:ejazapp/helpers/routes.dart';
 import 'package:ejazapp/pages/book_scanner/camerapreview.dart';
 import 'package:ejazapp/pages/Sign_pages/Sign_in/sign_in_page.dart'; //
@@ -5,6 +6,7 @@ import 'package:ejazapp/pages/Sign_pages/Sign_in/sign_in_with_email_page.dart'; 
 import 'package:ejazapp/pages/book/book_details/view_publishers.dart';
 import 'package:ejazapp/pages/chat/chat_screen.dart';
 import 'package:ejazapp/pages/chat_list/chat_list_screen.dart';
+import 'package:ejazapp/pages/image_screen/image_screen.dart';
 import 'package:ejazapp/pages/profile/statistic.dart';
 import 'package:ejazapp/pages/home/stories/add_post.dart';
 import 'package:ejazapp/pages/home/authors/list_authors.dart';
@@ -137,11 +139,12 @@ List<GetPage<dynamic>> allPages = [
   GetPage(name: Routes.addpost, page: () => const AddPost()),
   GetPage(name: Routes.chatai, page: () => const GeminiChat()),
   GetPage(name: Routes.thankyou, page: () => const ThankYouPage(title: '',)),
-  GetPage(name: Routes.TakePictureScreen, page: () =>  TakePictureScreen(camera: null,)),
+  GetPage(name: Routes.TakePictureScreen, page: () =>  TakePictureScreen(camera:Get.arguments['cameras'],)),
   GetPage(name: Routes.viewpublishers, page: () =>  ListViewpublisher()),
   GetPage(name: Routes.statistic, page: () =>  Statistic()),
    GetPage(name: Routes.chatList, page: () => ChatListScreen(),),
-  GetPage(name: Routes.chat, page: () => ChatScreen(user: Get.arguments['user'],),)
+  GetPage(name: Routes.chat, page: () => ChatScreen(user: Get.arguments['user'],),),
+  GetPage(name: Routes.imageView, page: () => ImageScreen(),)
 
 
 ];

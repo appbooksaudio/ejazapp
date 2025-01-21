@@ -1,10 +1,12 @@
-
+import 'package:ejazapp/controllers/chat/chat_controllers.dart';
 import 'package:ejazapp/widgets/rectangularButton.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:signalr_netcore/hub_connection.dart';
 import '../../helpers/colors.dart';
+import '../../helpers/routes.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/chat/audio_message_widget.dart';
 import '../../widgets/chat/document_message_widget.dart';
@@ -13,7 +15,8 @@ import '../../widgets/chat/message_container.dart';
 import '../../widgets/chat/message_sending_section.dart';
 import '../../widgets/chat/profile_details_section.dart';
 import '../../widgets/chat/text_message_widget.dart';
-import 'dart:math' as math;
+import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
 class ChatScreen extends StatefulWidget {
   const ChatScreen({super.key, this.user});
 
@@ -24,12 +27,55 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
+  late ScrollController scrollController;
+  late HubConnection hubConnection;
+  late ChatController chatController;
+  @override
+  void initState() {
+    super.initState();
+    scrollController = ScrollController();
+    chatController = Get.put(ChatController());
+    hubConnection=chatController.hubConnection;
+    hubConnection.on('ReceiveMessage', (arguments) {
+      print('Message Received ${arguments}');
+    },);
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) {
+        scrollController.jumpTo(
+          scrollController.position.maxScrollExtent,
+        );
+      },
+    );
+    chatController.addListener(() {
+      WidgetsBinding.instance.addPostFrameCallback(
+            (_) {
+          scrollController.jumpTo(
+            scrollController.position.maxScrollExtent,
+          );
+        },
+      );
+    },);
+  }
+
+
+
+  // void _handleReceivedMessage(List<Object?> arguments) {
+  //   String user = arguments[0] ?? '';
+  //   String message = arguments[1] ?? '';
+  //
+  //   setState(() {
+  //     messages.add('$user: $message');
+  //   });
+  // }
+
   @override
   Widget build(BuildContext context) {
     final themeProv = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
 
     bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
+
+    final locale= AppLocalizations.of(context)!;
 
     /// colors
     Color textColor =
@@ -45,34 +91,6 @@ class _ChatScreenState extends State<ChatScreen> {
         color: themeProv.isDarkTheme != null && themeProv.isDarkTheme!
             ? ColorDark.fontTitle
             : ColorLight.fontTitle);
-    final amplitudes = [
-      0.09,
-      0.12,
-      0.15,
-      0.35,
-      0.02,
-      0.03,
-      0.37,
-      0.04,
-      0.10,
-      0.55,
-      0.06,
-      0.05,
-      0.03,
-      0.10,
-      0.30,
-      0.15,
-      0.48,
-      0.02,
-      0.01,
-      0.08,
-      0.90,
-      0.50,
-      0.02,
-      0.12,
-      0.20,
-      0.40,
-    ];
     return Scaffold(
       body: SafeArea(
         child: Column(
@@ -89,7 +107,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         child: Stack(
                           alignment: Alignment.center,
                           children: [
-                            RectangularButton(
+                            SquareButton(
                               action: () {
                                 Get.back();
                               },
@@ -121,7 +139,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         ),
                       ),
                       const Spacer(),
-                      RectangularButton(
+                      SquareButton(
                         child: Icon(Icons.more_horiz),
                       ),
                     ],
@@ -140,80 +158,112 @@ class _ChatScreenState extends State<ChatScreen> {
               color: theme.cardColor,
               child: Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 24),
-                child: ListView(
-                  children: [
-                    SizedBox(
-                      height: 32,
-                    ),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Today',
-                          style: f13Font.copyWith(
-                              color: textColor, fontWeight: FontWeight.w700),
-                        )
-                      ],
-                    ),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    messageContainer(
-                        isReceived: true,
-                        messageType: MessageType.text,
-                        child: TextMessageWidget(
-                            isReceived: true,
-                            text:
-                                "Hey, I hope you're doing well. I wanted to talk to you about the project analysis we've been working on.")),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    messageContainer(
-                        isReceived: false,
-                        messageType: MessageType.text,
-                        child: TextMessageWidget(
+                child: GetBuilder(
+                  init: chatController,
+                  builder:(controller) =>  ListView(
+                    controller: scrollController,
+                    children: [
+                      SizedBox(
+                        height: 32,
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Text(
+                           locale.today,
+                            style: f13Font.copyWith(
+                                color: textColor, fontWeight: FontWeight.w700),
+                          )
+                        ],
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      messageContainer(
+                          isGroup: widget.user?['isGroup'],
+                          isReceived: true,
+                          messageType: MessageType.text,
+                          child: TextMessageWidget(
+                              isReceived: true,
+                              text:
+                                  "Hey, I hope you're doing well. I wanted to talk to you about the project analysis we've been working on.")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      messageContainer(
+                          isGroup: widget.user?['isGroup'],
+                          isReceived: false,
+                          messageType: MessageType.text,
+                          child: TextMessageWidget(
+                              isReceived: false,
+                              text:
+                                  "Hey, I hope you're doing well. I wanted to talk to you about the project analysis we've been working on.")),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      InkWell(
+                        onTap: () {
+                          Get.toNamed<dynamic>(
+                            Routes.imageView,
+                          );
+                        },
+                        child: messageContainer(
+                          isGroup: widget.user?['isGroup'],
+                          isReceived: false,
+                          messageType: MessageType.image,
+                          child: ImageMessageWidget(
                             isReceived: false,
-                            text:
-                                "Hey, I hope you're doing well. I wanted to talk to you about the project analysis we've been working on.")),
-                    SizedBox(
-                      height: 10,
-                    ),
-                    messageContainer(
-                      isReceived: false,
-                      messageType: MessageType.image,
-                      child: ImageMessageWidget(
-                        isReceived: false,
+                          ),
+                        ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    messageContainer(
-                      messageType: MessageType.image,
-                      isReceived: true,
-                      child: TextMessageWidget(
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      messageContainer(
+                        isGroup: widget.user?['isGroup'],
+                        messageType: MessageType.image,
                         isReceived: true,
-                        text: "Fantastic",
+                        child: TextMessageWidget(
+                          isReceived: true,
+                          text: "Fantastic",
+                        ),
                       ),
-                    ),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    messageContainer(
-                        messageType: MessageType.file,
-                        isReceived: false,
-                        child: documentMessageWidget()),
-                    const SizedBox(
-                      height: 10,
-                    ),
-                    messageContainer(
-                        messageType: MessageType.file,
-                        isReceived: false,
-                        child: AudioMessageWidget()),
-                    const SizedBox(
-                      height: 85,
-                    )
-                  ],
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      messageContainer(
+                          isGroup: widget.user?['isGroup'],
+                          messageType: MessageType.file,
+                          isReceived: false,
+                          child: documentMessageWidget()),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      messageContainer(
+                          isGroup: widget.user?['isGroup'],
+                          messageType: MessageType.file,
+                          isReceived: false,
+                          child: AudioMessageWidget()),
+                      const SizedBox(
+                        height: 10,
+                      ),
+                      ...List.generate(controller.sampleList.length, (index) {
+                        return   Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 5),
+                          child: messageContainer(
+                            messageType: MessageType.image,
+                            isReceived: false,
+                            child: TextMessageWidget(
+                              isReceived: false,
+                              text: controller.sampleList[index],
+                            ),
+                          ),
+                        );
+                      },),
+
+                      SizedBox(height: 100,)
+                    ],
+                  ),
                 ),
               ),
             ))

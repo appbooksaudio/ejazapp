@@ -250,23 +250,26 @@ class _BookDetailPageState extends State<BookDetailPage>
                 ),
                 TextButton.icon(
                   onPressed: () {
-                    final name = mybox!.get('name');
-                    name != 'Guest'
-                        ? Get.toNamed<dynamic>(Routes.comentpage,
-                            arguments: book //comment,
-                            )
-                        : Get.showSnackbar(GetSnackBar(
-                            title: 'Ejaz',
-                            message: AppLocalizations.of(context)!
-                                .messagetoguestuser,
-                            duration: const Duration(seconds: 5),
-                            titleText: Column(
-                              children: [],
-                            ),
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: Colors.red,
-                            icon: const Icon(Icons.login),
-                          ));
+                    // final name = mybox!.get('name');
+                    // name != 'Guest'
+                    //     ? Get.toNamed<dynamic>(Routes.comentpage,
+                    //         arguments: book //comment,
+                    //         )
+                    //     : Get.showSnackbar(GetSnackBar(
+                    //         title: 'Ejaz',
+                    //         message: AppLocalizations.of(context)!
+                    //             .messagetoguestuser,
+                    //         duration: const Duration(seconds: 5),
+                    //         titleText: Column(
+                    //           children: [],
+                    //         ),
+                    //         snackPosition: SnackPosition.BOTTOM,
+                    //         backgroundColor: Colors.red,
+                    //         icon: const Icon(Icons.login),
+                    //       ));
+                    Get.toNamed<dynamic>(Routes.comentpage,
+                        arguments: book //comment,
+                    );
                   } // ignore: avoid_dynamic_calls
                   ,
                   icon: Column(children: [

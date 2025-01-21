@@ -32,6 +32,7 @@ class ProfileDetailsSection extends StatelessWidget {
               shape: BoxShape.circle,
               color: Color(0xffD9D9D9),
               image: DecorationImage(
+                fit: BoxFit.fill,
                   image: CachedNetworkImageProvider(user['profileUrl']??''))),
         ),
         SizedBox(
@@ -45,13 +46,13 @@ class ProfileDetailsSection extends StatelessWidget {
               style: theme.textTheme.headlineMedium?.copyWith(fontSize: 20),
             ),
             Text(
-              'Last seen 2 hours ago',
+            ( user['isGroup']??false)?'4 people': 'Last seen 2 hours ago',
               style: f13Font,
             ),
           ],
         ),
         const Spacer(),
-        RectangularButton(
+        SquareButton(
           child: Icon(Icons.search),
         )
       ],

@@ -1,3 +1,4 @@
+import 'package:cached_network_image/cached_network_image.dart';
 import 'package:flutter/material.dart';
 
 class ImageMessageWidget extends StatelessWidget {
@@ -22,7 +23,7 @@ final bool isReceived;
             borderRadius: BorderRadius.circular(12),
               image: DecorationImage(
                   fit: BoxFit.fill,
-                  image: NetworkImage(
+                  image:CachedNetworkImageProvider (
                       'https://hbkupress.com/cdn/shop/articles/HBKU_Press_Highlights_the_Benefits_of_Reading_Books_in_a_Series.jpg?v=1683665622'))),
         ),
         const SizedBox(

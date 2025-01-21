@@ -1,17 +1,18 @@
 
 import 'package:flutter/material.dart';
 
-class RectangularButton extends StatelessWidget {
-  const RectangularButton({
+class SquareButton extends StatelessWidget {
+  const SquareButton({
     super.key,
     this.child,
     this.backGroundColor,
-    this.action,
+    this.action, this.size,
   });
 
   final Widget? child;
   final Color? backGroundColor;
   final Function()? action;
+  final double? size;
 
   @override
   Widget build(BuildContext context) {
@@ -22,8 +23,8 @@ class RectangularButton extends StatelessWidget {
         decoration: BoxDecoration(
             color: backGroundColor ?? theme.cardColor,
             borderRadius: BorderRadius.circular(8)),
-        height: 44,
-        width: 44,
+        height:size?? 44,
+        width: size??44,
         child: Center(
           child: child,
         ),

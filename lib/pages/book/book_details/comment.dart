@@ -11,6 +11,7 @@ import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
@@ -144,281 +145,300 @@ class _CommentPageState extends State<CommentPage> {
   List<Widget> getListComment(AsyncSnapshot<QuerySnapshot> snapshot) {
     DateTime Date = DateTime.now();
     return snapshot.data!.docs
-        .map((doc) => Card(
-              child: Padding(
-                padding: const EdgeInsets.all(8.0),
-                child: CommentTreeWidget<Comment, Comment>(
-                  Comment(
-                      id: doc.id,
-                      avatar:
-                          doc['image'] != null ? doc['image'] as String : '',
-                      userName:
-                          doc['name'] != null ? doc['name'] as String : '',
-                      content: doc['text'] != null ? doc['text'] as String : '',
-                      // reply: doc['reply'] as List,
-                      time: doc['timestamp'] != null
-                          ? (doc['timestamp'] as Timestamp).toDate()
-                          : Date
-                  ), //
-                  [
-                    for (var i = 0; i < ((doc['reply'].length) as num); i++)
-                      Comment(
-                          id: doc.id,
-                          avatar: doc['reply'][i]['image'] != null
-                              ? doc['reply'][i]['image'] as String
-                              : '',
-                          userName: doc['reply'][i]['name'] != null
-                              ? doc['reply'][i]['name'] as String
-                              : '',
-                          content: doc['reply'][i]['text'] != null
-                              ? doc['reply'][i]['text'] as String
-                              : '',
-                          // reply: doc['reply'] as List,
-                          time: doc['reply'][i]['timestamp'] != null
-                              ? (doc['reply'][i]['timestamp'] as Timestamp)
-                                  .toDate()
-                              : Date
-                      ),
-                  ],
-                  treeThemeData: const TreeThemeData(
-                      lineColor: Colors.transparent, lineWidth: 3),
-                  avatarRoot: (context, data) => PreferredSize(
-                    preferredSize: Size.fromRadius(18),
-                    child: CircleAvatar(
-                      radius: 18,
-                      backgroundColor: Colors.grey,
-                      backgroundImage: CachedNetworkImageProvider(
-                        data.avatar!,
-                      ),
+        .map((doc) {
+          // if(doc['fcmToken']!=null) {
+          //   print('fcmToken ${doc['fcmToken']}');
+          // }
+      return Card(
+        child: Padding(
+          padding: const EdgeInsets.all(8.0),
+          child: CommentTreeWidget<Comment, Comment>(
+            Comment(
+                id: doc.id,
+                avatar:
+                doc['image'] != null ? doc['image'] as String : '',
+                userName:
+                doc['name'] != null ? doc['name'] as String : '',
+                content: doc['text'] != null ? doc['text'] as String : '',
+                // reply: doc['reply'] as List,
+                time: doc['timestamp'] != null
+                    ? (doc['timestamp'] as Timestamp).toDate()
+                    : Date
+            ), //
+            [
+              for (var i = 0; i < ((doc['reply'].length) as num); i++)
+                Comment(
+                    id: doc.id,
+                    avatar: doc['reply'][i]['image'] != null
+                        ? doc['reply'][i]['image'] as String
+                        : '',
+                    userName: doc['reply'][i]['name'] != null
+                        ? doc['reply'][i]['name'] as String
+                        : '',
+                    content: doc['reply'][i]['text'] != null
+                        ? doc['reply'][i]['text'] as String
+                        : '',
+                    // reply: doc['reply'] as List,
+                    time: doc['reply'][i]['timestamp'] != null
+                        ? (doc['reply'][i]['timestamp'] as Timestamp)
+                        .toDate()
+                        : Date
+                ),
+            ],
+            treeThemeData: const TreeThemeData(
+                lineColor: Colors.transparent, lineWidth: 3),
+            avatarRoot: (context, data) =>
+                PreferredSize(
+                  preferredSize: Size.fromRadius(18),
+                  child: CircleAvatar(
+                    radius: 18,
+                    backgroundColor: Colors.grey,
+                    backgroundImage: CachedNetworkImageProvider(
+                      data.avatar!,
                     ),
                   ),
-                  avatarChild: (context, data) => PreferredSize(
-                    preferredSize: Size.fromRadius(12),
-                    child: CircleAvatar(
-                      radius: 12,
-                      backgroundColor: Colors.grey,
-                      backgroundImage: CachedNetworkImageProvider(
-                        data.avatar!,
-                      ),
+                ),
+            avatarChild: (context, data) =>
+                PreferredSize(
+                  preferredSize: Size.fromRadius(12),
+                  child: CircleAvatar(
+                    radius: 12,
+                    backgroundColor: Colors.grey,
+                    backgroundImage: CachedNetworkImageProvider(
+                      data.avatar!,
                     ),
                   ),
-                  contentChild: (context, data) {
-                    final themeProv = Provider.of<ThemeProvider>(context);
-                    return Column(
+                ),
+            contentChild: (context, data) {
+              final themeProv = Provider.of<ThemeProvider>(context);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                        vertical: 8, horizontal: 8),
+                    decoration: BoxDecoration(
+                        color: themeProv.isDarkTheme!
+                            ? Colors.transparent
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                              vertical: 8, horizontal: 8),
-                          decoration: BoxDecoration(
-                              color: themeProv.isDarkTheme!
-                                  ? Colors.transparent
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${data.userName}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall
-                                        ?.copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 11,
-                                            color: themeProv.isDarkTheme!
-                                                ? Colors.white
-                                                : ColorDark.background),
-                                  ),
-                                  Text(
-                                    '${DateFormat('dd-MMM-yyy – kk:mm').format(data.time??DateTime.now())}', //Date.toString().split(' ')[0],
-                                    style: TextStyle(
-                                        color: Colors.blue[700], fontSize: 10),
-                                  )
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 4,
-                              ),
-                              Text(
-                                '${data.content}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall
-                                    ?.copyWith(
-                                        fontWeight: FontWeight.w300,
-                                        color: themeProv.isDarkTheme!
-                                            ? Colors.white
-                                            : ColorDark.background),
-                              ),
-                            ],
-                          ),
-                        ),
-                        DefaultTextStyle(
-                          style: Theme.of(context)
-                              .textTheme
-                              .bodySmall!
-                              .copyWith(
-                                  color: ColorDark.primary,
-                                  fontWeight: FontWeight.bold),
-                          child: Padding(
-                            padding: const EdgeInsets.only(top: 4),
-                            child: Row(
-                              children: [
-                                // TextButton(
-                                //   style: TextButton.styleFrom(
-                                //     textStyle: const TextStyle(
-                                //       fontSize: 12,
-                                //     ),
-                                //   ),
-                                //   onPressed: () {
-                                //     setState(() {
-                                //       RepComment = "replay";
-                                //       DocId = data.id as String;
-                                //     });
-                                //     FocusScope.of(context)
-                                //         .requestFocus(inputNode);
-                                //   },
-                                //   child: Row(
-                                //     children: [
-                                //       const Text(
-                                //         'Reply',
-                                //         style: TextStyle(
-                                //             color: ColorLight.primary),
-                                //       ),
-                                //     ],
-                                //   ),
-                                // ),
-                              ],
+                        Row(
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${data.userName}',
+                              style: Theme
+                                  .of(context)
+                                  .textTheme
+                                  .bodySmall
+                                  ?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 11,
+                                  color: themeProv.isDarkTheme!
+                                      ? Colors.white
+                                      : ColorDark.background),
                             ),
-                          ),
-                        )
+                            Text(
+                              '${DateFormat('dd-MMM-yyy – kk:mm').format(
+                                  data.time ?? DateTime.now())}',
+                              //Date.toString().split(' ')[0],
+                              style: TextStyle(
+                                  color: Colors.blue[700], fontSize: 10),
+                            )
+                          ],
+                        ),
+                        const SizedBox(
+                          height: 4,
+                        ),
+                        Text(
+                          '${data.content}',
+                          style: Theme
+                              .of(context)
+                              .textTheme
+                              .bodySmall
+                              ?.copyWith(
+                              fontWeight: FontWeight.w300,
+                              color: themeProv.isDarkTheme!
+                                  ? Colors.white
+                                  : ColorDark.background),
+                        ),
                       ],
-                    );
-                  },
-                  contentRoot: (context, data) {
-                    final themeProv = Provider.of<ThemeProvider>(context);
-                    return Column(
+                    ),
+                  ),
+                  DefaultTextStyle(
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .bodySmall!
+                        .copyWith(
+                        color: ColorDark.primary,
+                        fontWeight: FontWeight.bold),
+                    child: Padding(
+                      padding: const EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          // TextButton(
+                          //   style: TextButton.styleFrom(
+                          //     textStyle: const TextStyle(
+                          //       fontSize: 12,
+                          //     ),
+                          //   ),
+                          //   onPressed: () {
+                          //     setState(() {
+                          //       RepComment = "replay";
+                          //       DocId = data.id as String;
+                          //     });
+                          //     FocusScope.of(context)
+                          //         .requestFocus(inputNode);
+                          //   },
+                          //   child: Row(
+                          //     children: [
+                          //       const Text(
+                          //         'Reply',
+                          //         style: TextStyle(
+                          //             color: ColorLight.primary),
+                          //       ),
+                          //     ],
+                          //   ),
+                          // ),
+                        ],
+                      ),
+                    ),
+                  )
+                ],
+              );
+            },
+            contentRoot: (context, data) {
+              final themeProv = Provider.of<ThemeProvider>(context);
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Container(
+                    padding:
+                    EdgeInsets.symmetric(vertical: 8, horizontal: 8),
+                    decoration: BoxDecoration(
+                        color: themeProv.isDarkTheme!
+                            ? Colors.transparent
+                            : Colors.transparent,
+                        borderRadius: BorderRadius.circular(12)),
+                    child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding:
-                              EdgeInsets.symmetric(vertical: 8, horizontal: 8),
-                          decoration: BoxDecoration(
-                              color: themeProv.isDarkTheme!
-                                  ? Colors.transparent
-                                  : Colors.transparent,
-                              borderRadius: BorderRadius.circular(12)),
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Row(
-                                mainAxisAlignment:
-                                    MainAxisAlignment.spaceBetween,
-                                children: [
-                                  Text(
-                                    '${data.userName}',
-                                    style: Theme.of(context)
-                                        .textTheme
-                                        .bodySmall!
-                                        .copyWith(
-                                            fontWeight: FontWeight.bold,
-                                            fontSize: 12,
-                                            color: themeProv.isDarkTheme!
-                                                ? Colors.white
-                                                : ColorDark.background),
-                                  ),
-                                  Text(
-                                    '${DateFormat('dd-MMM-yyy – kk:mm').format(data.time??DateTime.now())}', //.toString().split(' ')[0]}',
-                                    style: TextStyle(color: Colors.blue[700]),
-                                  )
-                                ],
-                              ),
-                              const SizedBox(
-                                height: 4,
-                              ),
-                              Text(
-                                '${data.content}',
-                                style: Theme.of(context)
-                                    .textTheme
-                                    .bodySmall!
-                                    .copyWith(
-                                        fontWeight: FontWeight.w300,
-                                        color: themeProv.isDarkTheme!
-                                            ? Colors.white
-                                            : ColorDark.background),
-                              ),
-                            ],
-                          ),
+                        Row(
+                          mainAxisAlignment:
+                          MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(
+                              '${data.userName}',
+                              style: Theme
+                                  .of(context)
+                                  .textTheme
+                                  .bodySmall!
+                                  .copyWith(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 12,
+                                  color: themeProv.isDarkTheme!
+                                      ? Colors.white
+                                      : ColorDark.background),
+                            ),
+                            Text(
+                              '${DateFormat('dd-MMM-yyy – kk:mm').format(
+                                  data.time ?? DateTime.now())}',
+                              //.toString().split(' ')[0]}',
+                              style: TextStyle(color: Colors.blue[700]),
+                            )
+                          ],
                         ),
-                        DefaultTextStyle(
-                          style: Theme.of(context)
+                        const SizedBox(
+                          height: 4,
+                        ),
+                        Text(
+                          '${data.content}',
+                          style: Theme
+                              .of(context)
                               .textTheme
                               .bodySmall!
                               .copyWith(
-                                  color: ColorLight.primary,
-                                  fontWeight: FontWeight.bold),
-                          child: Padding(
-                            padding: EdgeInsets.only(top: 4),
+                              fontWeight: FontWeight.w300,
+                              color: themeProv.isDarkTheme!
+                                  ? Colors.white
+                                  : ColorDark.background),
+                        ),
+                      ],
+                    ),
+                  ),
+                  DefaultTextStyle(
+                    style: Theme
+                        .of(context)
+                        .textTheme
+                        .bodySmall!
+                        .copyWith(
+                        color: ColorLight.primary,
+                        fontWeight: FontWeight.bold),
+                    child: Padding(
+                      padding: EdgeInsets.only(top: 4),
+                      child: Row(
+                        children: [
+                          //  Padding(
+                          //    padding: const EdgeInsets.only(top:6.0),
+                          //    child: Text('Like',
+                          //                 style: TextStyle(
+                          //                   fontSize: 13,
+                          //                   color: ColorLight.primary,
+                          //                     fontWeight: FontWeight.bold)),
+                          //  ),
+
+                          TextButton(
+                            style: TextButton.styleFrom(
+                              textStyle: const TextStyle(
+                                fontSize: 12,
+                              ),
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                RepComment = "replay";
+                                DocId = data.id as String;
+                              });
+                              FocusScope.of(context)
+                                  .requestFocus(inputNode);
+                            },
                             child: Row(
                               children: [
-                                //  Padding(
-                                //    padding: const EdgeInsets.only(top:6.0),
-                                //    child: Text('Like',
-                                //                 style: TextStyle(
-                                //                   fontSize: 13,
-                                //                   color: ColorLight.primary,
-                                //                     fontWeight: FontWeight.bold)),
-                                //  ),
-
-                                TextButton(
-                                  style: TextButton.styleFrom(
-                                    textStyle: const TextStyle(
-                                      fontSize: 12,
-                                    ),
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      RepComment = "replay";
-                                      DocId = data.id as String;
-                                    });
-                                    FocusScope.of(context)
-                                        .requestFocus(inputNode);
-                                  },
-                                  child: Row(
-                                    children: [
-                                      Icon(
-                                        Icons.comment_outlined,
-                                        size: 20.0,
-                                        color: Colors.blue,
-                                      ),
-                                      SizedBox(
-                                        width: 5,
-                                      ),
-                                      const Text(
-                                        'Reply',
-                                        style: TextStyle(
-                                            fontSize: 13,
-                                            color: ColorLight.primary,
-                                            fontWeight: FontWeight.bold),
-                                      ),
-                                    ],
-                                  ),
+                                Icon(
+                                  Icons.comment_outlined,
+                                  size: 20.0,
+                                  color: Colors.blue,
+                                ),
+                                SizedBox(
+                                  width: 5,
+                                ),
+                                const Text(
+                                  'Reply',
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      color: ColorLight.primary,
+                                      fontWeight: FontWeight.bold),
                                 ),
                               ],
                             ),
                           ),
-                        ),
-                      ],
-                    );
-                  },
-                ),
-              ),
-            ))
+                        ],
+                      ),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      );
+    }
+
+      )
         .toList();
   }
 
@@ -517,6 +537,8 @@ class _CommentPageState extends State<CommentPage> {
             "https://firebasestorage.googleapis.com/v0/b/ejaz-ca748.appspot.com/o/apple%2Favatar.jpeg?alt=media&token=0cd72d6c-bfc9-4208-83c2-78a69d44f7b8");
       }
     }
+    final messaging = FirebaseMessaging.instance;
+    final fcmToken=await messaging.getToken();
     FirebaseFirestore.instance
         .collection('comment')
         .doc(comId)
@@ -530,6 +552,7 @@ class _CommentPageState extends State<CommentPage> {
           : "https://firebasestorage.googleapis.com/v0/b/ejaz-ca748.appspot.com/o/apple%2Favatar.jpeg?alt=media&token=0cd72d6c-bfc9-4208-83c2-78a69d44f7b8",
       'timestamp': FieldValue.serverTimestamp(),
       'text': comment,
+      'fcmToken':fcmToken,
       'reply':
           [] // here will be where all the replies of this post will be in Map...
     });

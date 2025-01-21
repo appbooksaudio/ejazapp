@@ -1,11 +1,7 @@
 import 'package:cached_network_image/cached_network_image.dart';
-import 'package:date_format/date_format.dart';
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
-import 'package:octo_image/octo_image.dart';
 import 'package:provider/provider.dart';
 import '../../helpers/colors.dart';
-import '../../helpers/routes.dart';
 import '../../providers/theme_provider.dart';
 import '../seen_tick.dart';
 
@@ -41,14 +37,7 @@ class ChatListTile extends StatelessWidget {
             ? ColorDark.fontTitle
             : ColorLight.fontTitle);
     return GestureDetector(
-      onTap: () {
-        Get.toNamed<dynamic>(
-          arguments: {
-            "user":user
-          },
-          Routes.chat,
-        );
-      },
+
       child: Row(
         children: [
           Container(

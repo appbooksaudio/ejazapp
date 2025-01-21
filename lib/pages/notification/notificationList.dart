@@ -3,8 +3,11 @@ import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/pages/notification/component/notificationTiles.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/widgets/empty_widget.dart';
+import 'package:ejazapp/widgets/rectangularButton.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_icons/flutter_icons.dart';
 import 'package:provider/provider.dart';
 
 class NotificationList extends StatefulWidget {
@@ -19,6 +22,7 @@ class _NotificationListState extends State<NotificationList> {
 
   @override
   Widget build(BuildContext context) {
+    bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
     final theme = Theme.of(context);
     final themeProv = Provider.of<ThemeProvider>(context);
     // mybox!.get('message').clear();
@@ -28,7 +32,7 @@ class _NotificationListState extends State<NotificationList> {
 
     return Scaffold(
         body: NestedScrollView(
-          physics: NeverScrollableScrollPhysics(),
+            physics: NeverScrollableScrollPhysics(),
             body: ListNotif.isNotEmpty
                 ? ListView.separated(
                     physics: const ClampingScrollPhysics(),
@@ -42,11 +46,11 @@ class _NotificationListState extends State<NotificationList> {
                         enable: true,
                         // ignore: inference_failure_on_function_invocation
                         onTap: () {
-                          ListNotif.removeAt(index);
-                          mybox!.put('message', ListNotif);
-                          setState(() {
-                            ListNotif = ListNotif;
-                          });
+                          // ListNotif.removeAt(index);
+                          // mybox!.put('message', ListNotif);
+                          // setState(() {
+                          //   ListNotif = ListNotif;
+                          // });
                         },
                       );
                     },
@@ -69,13 +73,36 @@ class _NotificationListState extends State<NotificationList> {
                 (BuildContext context, bool innerBoxIsScrolled) {
               return [
                 SliverAppBar(
-                    backgroundColor: theme.colorScheme.surface,
-                    foregroundColor:
-                        themeProv.isDarkTheme! ? Colors.blue : Colors.blue,
-                    pinned: true,
-                    centerTitle: false,
-                    automaticallyImplyLeading: true),
+                  backgroundColor: theme.colorScheme.surface,
+                  foregroundColor:
+                      themeProv.isDarkTheme! ? Colors.blue : Colors.blue,
+                  pinned: true,
+                  centerTitle: false,
+                  automaticallyImplyLeading: true,
+                  actions: [
+                 if(ListNotif.isNotEmpty)  GestureDetector(
+                   onTap: () {
+                     ListNotif.clear();
+                     mybox!.put('message', ListNotif);
+                     setState(() {
+                       ListNotif = ListNotif;
+                     });
+                   },
+                   child: Container(height: 30,width: 100,decoration: BoxDecoration(
+                       color: Colors.red.withAlpha(90),
+                       borderRadius: BorderRadius.circular(8)
+
+                     ),child: Center(child: Padding(
+                       padding: const EdgeInsets.only(top: 5),
+                       child: Text('Clear all',style: theme.textTheme.titleMedium,),
+                     )),),
+                 ),
+                        // : SizedBox.shrink()
+                    SizedBox(width: 16,)
+                  ],
+                ),
               ];
             }));
   }
+
 }

@@ -401,7 +401,7 @@
   "many_desktop_publishing_packages_and_web_page_editors_now_use": "Banyak paket penerbitan desktop dan editor halaman web sekarang digunakan.",
   "material": "Bahan",
   "men": "Pria",
-  "message": "Pesan",
+  "message": "دردشة",
   "min": "min",
   "misc": "Lain-lain",
   "mobile_number": "رقم جوالك",
@@ -1009,8 +1009,13 @@
               "stastic":"إحصائيات القراءة",
               "booktrack":"مسار الكتب",
               "cannotemail":"لا يمكنك حاليًا تغيير كلمة المرور الخاصة بك باستخدام البريد الإلكتروني",
-              "passwordwrong":"كلمة المرور أو البريد الإلكتروني خاطئ"
-
-
+              "passwordwrong":"كلمة المرور أو البريد الإلكتروني خاطئ",
+              "ejazChat": "دردشة إيجاز",
+              "allChat":"جميع الدردشات",
+              "unreadChat":"الدردشات غير المقروءة",
+              "groupChat":"دردشة جماعية",
+              "searchChat":"بحث في الدردشة",
+              "today":"اليوم",
+              "typeChatHere":"اكتب رسالة..."
 
  }

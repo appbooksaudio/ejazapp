@@ -64,4 +64,5 @@ class Routes {
 
   static const String chatList='/chatList';
   static const String chat='/chat';
+  static const String imageView='/image';
 }

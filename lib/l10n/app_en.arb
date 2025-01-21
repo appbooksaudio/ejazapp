@@ -1006,9 +1006,13 @@
              "stastic":"Reading Statistics",
              "booktrack":"Books Track",
             "cannotemail":"You cannot currently change your password using email",
-              "passwordwrong":"Wrong Password or Email"
-
-
-
+              "passwordwrong":"Wrong Password or Email",
+            "ejazChat": "Ejaz Chat",
+            "allChat":"All Chat",
+            "unreadChat":"Unread Chat",
+            "groupChat":"Group Chat",
+            "searchChat":"Search Chat",
+            "today":"Today",
+            "typeChatHere":"Type Chat Here..."
 
 }
