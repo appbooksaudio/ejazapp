@@ -123,7 +123,7 @@ late TextEditingController messageController;
                               color: Color(0xff0F99D6),
                             ),
                           ),
-                          hintText: '',
+                          hintText: locale.typeChatHere,
                           hintStyle: f13Font,
                           border: InputBorder.none,
                           focusedBorder: InputBorder.none,

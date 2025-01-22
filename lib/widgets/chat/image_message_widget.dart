@@ -3,9 +3,11 @@ import 'package:flutter/material.dart';
 
 class ImageMessageWidget extends StatelessWidget {
   const ImageMessageWidget({
-    super.key, required this.isReceived,
+    super.key,
+    required this.isReceived,
   });
-final bool isReceived;
+
+  final bool isReceived;
 
   @override
   Widget build(BuildContext context) {
@@ -20,10 +22,10 @@ final bool isReceived;
         Container(
           height: 113,
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(12),
               image: DecorationImage(
                   fit: BoxFit.fill,
-                  image:CachedNetworkImageProvider (
+                  image: CachedNetworkImageProvider(
                       'https://hbkupress.com/cdn/shop/articles/HBKU_Press_Highlights_the_Benefits_of_Reading_Books_in_a_Series.jpg?v=1683665622'))),
         ),
         const SizedBox(
@@ -36,7 +38,8 @@ final bool isReceived;
             Text(
               "check this out",
               style: f13Font.copyWith(
-                  color:isReceived?Color(0xff131313):Colors.white, fontWeight: FontWeight.w400),
+                  color: isReceived ? Color(0xff131313) : Colors.white,
+                  fontWeight: FontWeight.w400),
             ),
           ],
         ),

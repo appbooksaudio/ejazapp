@@ -47,6 +47,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
     Color dividerColor=(themeProv.isDarkTheme??false)?ColorDark.divider:ColorLight.divider;
 
     final locale= AppLocalizations.of(context)!;
+    final size=MediaQuery.of(context).size;
 
     return Scaffold(
       body: SafeArea(
@@ -64,6 +65,17 @@ class _ChatListScreenState extends State<ChatListScreen> {
                     children: [
                       SquareButton(
                         child: Icon(Icons.more_horiz),
+                        action: () {
+                          showMenu(
+                              color: theme.cardColor,
+                              context: context,
+                              position: RelativeRect.fromLTRB(76, 16, 76, 0),
+                              items: List.generate(
+                                5,
+                                    (index) =>
+                                    PopupMenuItem(child: Text('Text $index',style: theme.textTheme.titleMedium,)),
+                              ));
+                        },
                       ),
                       const Spacer(),
                       SquareButton(

@@ -30,15 +30,19 @@ class _ChatScreenState extends State<ChatScreen> {
   late ScrollController scrollController;
   late HubConnection hubConnection;
   late ChatController chatController;
+
   @override
   void initState() {
     super.initState();
     scrollController = ScrollController();
     chatController = Get.put(ChatController());
-    hubConnection=chatController.hubConnection;
-    hubConnection.on('ReceiveMessage', (arguments) {
-      print('Message Received ${arguments}');
-    },);
+    hubConnection = chatController.hubConnection;
+    hubConnection.on(
+      'ReceiveMessage',
+      (arguments) {
+        print('Message Received ${arguments}');
+      },
+    );
     WidgetsBinding.instance.addPostFrameCallback(
       (_) {
         scrollController.jumpTo(
@@ -46,18 +50,18 @@ class _ChatScreenState extends State<ChatScreen> {
         );
       },
     );
-    chatController.addListener(() {
-      WidgetsBinding.instance.addPostFrameCallback(
-            (_) {
-          scrollController.jumpTo(
-            scrollController.position.maxScrollExtent,
-          );
-        },
-      );
-    },);
+    chatController.addListener(
+      () {
+        WidgetsBinding.instance.addPostFrameCallback(
+          (_) {
+            scrollController.jumpTo(
+              scrollController.position.maxScrollExtent,
+            );
+          },
+        );
+      },
+    );
   }
-
-
 
   // void _handleReceivedMessage(List<Object?> arguments) {
   //   String user = arguments[0] ?? '';
@@ -75,7 +79,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
     bool isArabic = Localizations.localeOf(context).languageCode == 'ar';
 
-    final locale= AppLocalizations.of(context)!;
+    final locale = AppLocalizations.of(context)!;
+
+    final size=MediaQuery.of(context).size;
 
     /// colors
     Color textColor =
@@ -140,6 +146,17 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                       const Spacer(),
                       SquareButton(
+                        action: () {
+                          showMenu(
+                            color: theme.cardColor,
+                              context: context,
+                              position: RelativeRect.fromLTRB((size.width-76), 16, 76, 0),
+                              items: List.generate(
+                                5,
+                                (index) =>
+                                    PopupMenuItem(child: Text('Text $index',style: theme.textTheme.titleMedium,)),
+                              ));
+                        },
                         child: Icon(Icons.more_horiz),
                       ),
                     ],
@@ -160,7 +177,7 @@ class _ChatScreenState extends State<ChatScreen> {
                 padding: const EdgeInsets.symmetric(horizontal: 24),
                 child: GetBuilder(
                   init: chatController,
-                  builder:(controller) =>  ListView(
+                  builder: (controller) => ListView(
                     controller: scrollController,
                     children: [
                       SizedBox(
@@ -170,7 +187,7 @@ class _ChatScreenState extends State<ChatScreen> {
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
                           Text(
-                           locale.today,
+                            locale.today,
                             style: f13Font.copyWith(
                                 color: textColor, fontWeight: FontWeight.w700),
                           )
@@ -247,21 +264,25 @@ class _ChatScreenState extends State<ChatScreen> {
                       const SizedBox(
                         height: 10,
                       ),
-                      ...List.generate(controller.sampleList.length, (index) {
-                        return   Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 5),
-                          child: messageContainer(
-                            messageType: MessageType.image,
-                            isReceived: false,
-                            child: TextMessageWidget(
+                      ...List.generate(
+                        controller.sampleList.length,
+                        (index) {
+                          return Padding(
+                            padding: const EdgeInsets.symmetric(vertical: 5),
+                            child: messageContainer(
+                              messageType: MessageType.image,
                               isReceived: false,
-                              text: controller.sampleList[index],
+                              child: TextMessageWidget(
+                                isReceived: false,
+                                text: controller.sampleList[index],
+                              ),
                             ),
-                          ),
-                        );
-                      },),
-
-                      SizedBox(height: 100,)
+                          );
+                        },
+                      ),
+                      SizedBox(
+                        height: 100,
+                      )
                     ],
                   ),
                 ),
