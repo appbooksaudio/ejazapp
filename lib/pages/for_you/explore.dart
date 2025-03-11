@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:ejazapp/core/services/services.dart';
 import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 import 'package:ejazapp/data/models/book.dart';
@@ -8,10 +10,12 @@ import 'package:ejazapp/helpers/routes.dart';
 import 'package:ejazapp/pages/for_you/recommended.dart';
 import 'package:ejazapp/pages/home/groupes/my_groupes.dart';
 import 'package:ejazapp/pages/home/self_developement/self_developement.dart';
+import 'package:ejazapp/pages/view_all/all_item.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/widgets/LoadingListPage.dart';
 import 'package:ejazapp/widgets/book_card.dart';
+import 'package:ejazapp/widgets/popup_preference.dart';
 import 'package:ejazapp/widgets/search_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
@@ -37,7 +41,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   bool _showAppbar = true;
   bool isScrollingDown = false;
   String? _icon;
-
+  Timer? _popupTimer;
   Future<dynamic> getIcon() async {
     final prefs = await SharedPreferences.getInstance();
     String? icon =
@@ -79,6 +83,14 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     //   Provider.of<BooksApi>(context, listen: false).getAuthors();
     // });
     init();
+    // Show the popup after 5 seconds
+    _popupTimer = Timer(Duration(seconds: 5), () {
+      var data = mybox!.get('category');
+      if( data ==null || data.length==0 ){ 
+        showPreferencePopup(context);
+        }
+     
+    });
     // context.read<LocaleProvider>().initState();
   }
 
@@ -89,20 +101,33 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   }
 
   void searchBook(String query) {
+    final localprovider = Provider.of<LocaleProvider>(context, listen: false);
     final books = mockBookList.where((book) {
-      final titleLower = book.bk_Name!.toLowerCase();
-      // final authorLower = book.authors!.toLowerCase();
+      final titleLower = localprovider.localelang!.languageCode == 'en'
+          ? book.bk_Name!.toLowerCase()
+          : book.bk_Name_Ar!.toLowerCase();
+      // Extract author names based on language and convert to lowercase
+      final authorLower = book.authors.map((author) {
+        // Safely extract author name based on the language
+        final name = localprovider.localelang!.languageCode == 'en'
+            ? (author['at_Name'] ?? '').toString()
+            : (author['at_Name_Ar'] ?? '').toString();
+        return name.toLowerCase();
+      }).join(' '); // Combine all author names
       final searchLower = query.toLowerCase();
 
-      return titleLower
-          .contains(searchLower); //||authorLower.contains(searchLower);
+      return titleLower.contains(searchLower) ||
+          authorLower.contains(searchLower);
     }).toList();
 
     setState(() {
       this.query = query;
       this.books = books;
     });
+
+ 
   }
+ 
 
   Widget buildSearch() => SearchWidget(
         text: query,
@@ -119,6 +144,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
   void dispose() {
     _scrollViewController!.dispose();
     // _tabController!.dispose();
+    _popupTimer?.cancel(); // Cancel the timer when the widget is disposed
+
     super.dispose();
   }
 
@@ -164,23 +191,48 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     // );
   }
 
+  List<Book> getLastNBooksAdded(List<Book> books, int n) {
+    // Sort the list by addedAt in descending order (most recent first)
+    books.sort((a, b) => DateTime.parse(b.bk_CreatedOn!)
+        .compareTo(DateTime.parse(a.bk_CreatedOn!)));
+
+    // Return the first N books, or the whole list if N is larger than the list length
+    return books.take(n).toList();
+  }
+
   Positioned buildMainContent(BuildContext context) {
 //************************ Filter User Choose ****************************//
     final data = mybox!.get('category');
-    var getSelect = [];
-    if (data != null) {
-      getSelect = mybox!.get('category') as List;
-    }
+    List<Map<String, String>> getSelect = [];
 
-    final SelectUser = <Book>[];
-    // SelectUser.removeWhere((item) => !getSelect.contains(item));
-    for (var i = 0; i < mockBookList.length; i++) {
-      for (var j = 0; j < getSelect.length; j++) {
-        if (mockBookList[i].categories[0]['ct_Title'] == getSelect[j]) {
-          SelectUser.add(mockBookList[i]);
-        }
-      }
+    if (data != null) {
+      // Safely cast each element to Map<String, String>
+      getSelect = List<Map<String, String>>.from(data.map((item) =>
+              Map<String, String>.from(
+                  item as Map)) // Assuming each item is a Map
+          );
     }
+    List<Book> RecentlyAdded = getLastNBooksAdded(mockBookList, 10);
+
+// Get unique value between RecentlyAdded and getSelect
+    List<Map<String, dynamic>> filteredRecentlyAdded =
+        RecentlyAdded.map((book) {
+      Map<String, dynamic> bookMap = {};
+      for (var category in book.categories) {
+        // if (category is Map<String, String>) {
+        bookMap.addAll(category);
+        //  }
+      }
+      return bookMap;
+    }).where((bookMap) {
+      return getSelect.any((selected) {
+        return selected['ct_Title'] == bookMap['ct_Title'] ||
+            selected['ct_Title_Ar'] == bookMap['ct_Title_Ar'];
+      });
+    }).toList();
+
+    print(filteredRecentlyAdded);
+
     print('list user select $getSelect');
 
     final theme = Theme.of(context);
@@ -238,13 +290,27 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             title: AppLocalizations.of(context)!.recommended,
                             style: theme.textTheme.headlineLarge,
                             trailing: _icon == 'en'
-                                ? const Icon(
-                                    Feather.chevrons_right,
-                                    color: ColorLight.primary,
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "View All",
+                                      style: TextStyle(
+                                        color: ColorLight.primary,
+                                      ),
+                                    ),
                                   )
-                                : const Icon(
-                                    Feather.chevrons_left,
-                                    color: ColorLight.primary,
+                                // const Icon(
+                                //     Feather.chevrons_right,
+                                //     color: ColorLight.primary,
+                                //   )
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "عرض الكل",
+                                      style: TextStyle(
+                                        color: ColorLight.primary,
+                                      ),
+                                    ),
                                   ),
                             onTap: () {
                               Get.toNamed<dynamic>(
@@ -262,18 +328,27 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             title: AppLocalizations.of(context)!.recently_added,
                             style: theme.textTheme.headlineLarge,
                             trailing: _icon == 'en'
-                                ? const Icon(
-                                    Feather.chevrons_right,
-                                    color: ColorLight.primary,
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "View All",
+                                      style:
+                                          TextStyle(color: ColorLight.primary),
+                                    ),
                                   )
-                                : const Icon(
-                                    Feather.chevrons_left,
-                                    color: ColorLight.primary,
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "عرض الكل",
+                                      style: TextStyle(
+                                        color: ColorLight.primary,
+                                      ),
+                                    ),
                                   ),
                             onTap: () {
                               Get.toNamed<dynamic>(
                                 Routes.allitem,
-                                arguments: [SelectUser, 'explore', ''],
+                                arguments: [RecentlyAdded, 'explore', ''],
                               );
                             },
                           ),
@@ -282,18 +357,18 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             width: double.infinity,
                             height: 270,
                             child: ListView.builder(
-                              itemCount: SelectUser.isEmpty
+                              itemCount: RecentlyAdded.isEmpty
                                   ? mockBookList.length
-                                  : SelectUser.length,
+                                  : RecentlyAdded.length,
                               scrollDirection: Axis.horizontal,
                               physics: const BouncingScrollPhysics(),
                               shrinkWrap: true,
                               padding:
                                   const EdgeInsets.only(left: Const.margin),
                               itemBuilder: (context, index) {
-                                final book = SelectUser.isEmpty
+                                final book = RecentlyAdded.isEmpty
                                     ? mockBookList[index]
-                                    : SelectUser[index];
+                                    : RecentlyAdded[index];
                                 return BookCard(book: book);
                               },
                             ),
@@ -427,13 +502,27 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             title: AppLocalizations.of(context)!.trending,
                             style: theme.textTheme.headlineLarge,
                             trailing: _icon == 'en'
-                                ? const Icon(
-                                    Feather.chevrons_right,
-                                    color: ColorLight.primary,
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "View All",
+                                      style: TextStyle(
+                                        color: ColorLight.primary,
+                                      ),
+                                    ),
                                   )
-                                : const Icon(
-                                    Feather.chevrons_left,
-                                    color: ColorLight.primary,
+                                // const Icon(
+                                //     Feather.chevrons_right,
+                                //     color: ColorLight.primary,
+                                //   )
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "عرض الكل",
+                                      style: TextStyle(
+                                        color: ColorLight.primary,
+                                      ),
+                                    ),
                                   ),
                             onTap: () {
                               Get.toNamed<dynamic>(
@@ -453,67 +542,81 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             title: AppLocalizations.of(context)!.mygroupes,
                             style: theme.textTheme.headlineLarge,
                             trailing: Container(),
-                           
                           ),
                           const SizedBox(height: 0),
                           const MyGroupes(),
                           if (getSelect.isNotEmpty)
-                            SizedBox(
-                              height: MediaQuery.of(context).size.height *
-                                  getSelect.length /
-                                  2.2,
-                              child: ListView.builder(
-                                itemCount: getSelect.length,
-                                itemBuilder: (context, index) {
-                                  final category = getSelect[index] as String;
-                                  return Column(
-                                    children: [
-                                      const SizedBox(
-                                        height: 10,
+                            ListView.builder(
+                              shrinkWrap: true,
+                              physics: NeverScrollableScrollPhysics(),
+                              itemCount: getSelect.length,
+                              itemBuilder: (context, index) {
+                                final localeProv =
+                                    Provider.of<LocaleProvider>(context);
+
+                                final category = localeProv
+                                            .localelang!.languageCode ==
+                                        'en'
+                                    ? getSelect.isNotEmpty
+                                        ? getSelect[index]['ct_Title'] as String
+                                        : ''
+                                    : getSelect.isNotEmpty
+                                        ? getSelect[index]['ct_Title_Ar']
+                                            as String
+                                        : '';
+                                return Column(
+                                  children: [
+                                    const SizedBox(height: 10),
+                                    buildSettingApp(
+                                      context,
+                                      title: category,
+                                      style: theme.textTheme.headlineLarge,
+                                      trailing: _icon == 'en'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "View All",
+                                      style: TextStyle(
+                                        color: ColorLight.primary,
                                       ),
-                                      buildSettingApp(
-                                        context,
-                                        title: category,
-                                        style: theme.textTheme.headlineLarge,
-                                        trailing: _icon == 'en'
-                                            ? const Icon(
-                                                Feather.chevrons_right,
-                                                color: ColorLight.primary,
-                                              )
-                                            : const Icon(
-                                                Feather.chevrons_left,
-                                                color: ColorLight.primary,
-                                              ),
-                                        onTap: () {
-                                          CategoryL? catSelect;
-                                          for (var i = 0;
-                                              i < CategoryList.length;
-                                              i++) {
-                                            if (CategoryList[i].ct_Name ==
-                                                category) {
-                                              catSelect = CategoryList[i];
-                                            }
+                                    ),
+                                  )
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "عرض الكل",
+                                      style: TextStyle(
+                                        color: ColorLight.primary,
+                                      ),
+                                    ),
+                                  ),
+                                      onTap: () {
+                                        CategoryL? catSelect;
+                                        for (var i = 0;
+                                            i < CategoryList.length;
+                                            i++) {
+                                          if ((CategoryList[i].ct_Name ==
+                                                  category) ||
+                                              (CategoryList[i].ct_Name_Ar ==
+                                                  category)) {
+                                            catSelect = CategoryList[i];
                                           }
-                                          Get.toNamed<dynamic>(
-                                            Routes.category,
-                                            arguments: catSelect,
-                                          );
-                                        },
-                                      ),
-                                      const SizedBox(
-                                        height: 5,
-                                      ),
-                                      ListFilterCategory(
-                                        category: category,
-                                      ),
-                                    ],
-                                  );
-                                },
-                              ),
+                                        }
+                                        Get.toNamed<dynamic>(
+                                          Routes.category,
+                                          arguments: catSelect,
+                                        );
+                                      },
+                                    ),
+                                    const SizedBox(height: 5),
+                                    ListFilterCategory(category: category),
+                                  ],
+                                );
+                              },
                             )
                           else
                             const Text(''),
-                          const SizedBox(height: 60),
+                          const SizedBox(height: 20),
                         ],
                       )
               else
@@ -546,7 +649,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
 
   Widget buildBook(Book book) {
     final localprovider = Provider.of<LocaleProvider>(context);
-     final themeProv = Provider.of<ThemeProvider>(context);
+    final themeProv = Provider.of<ThemeProvider>(context);
     return InkWell(
       onTap: () {
         if (book.bk_trial! != true) {
@@ -561,23 +664,24 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       child: ListTile(
         leading: Padding(
           padding: const EdgeInsets.all(2),
-           child:  ClipRRect(
-          borderRadius: BorderRadius.circular(8.0),
-          child: Image.network(
-            book.imagePath,
-            fit: BoxFit.contain,
-            width: 70,
-            height: 70,
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(8.0),
+            child: Image.network(
+              book.imagePath,
+              fit: BoxFit.contain,
+              width: 70,
+              height: 70,
+            ),
           ),
-        ),
         ),
         title: Text(
           localprovider.localelang!.languageCode == 'en'
               ? book.bk_Name!
               : book.bk_Name_Ar!,
-          style:  TextStyle(height: 1.3, color: themeProv.isDarkTheme! ? Colors.white : ColorDark.background,
+          style: TextStyle(
+            height: 1.3,
+            color: themeProv.isDarkTheme! ? Colors.white : ColorDark.background,
           ),
-          
         ),
         // subtitle: Text(book.authors!),
       ),

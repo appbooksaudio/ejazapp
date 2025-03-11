@@ -1,7 +1,9 @@
 import 'package:ejazapp/data/models/category.dart';
 import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/widgets/book_card.dart';
+import 'package:ejazapp/widgets/placeholders.dart';
 import 'package:flutter/material.dart';
+import 'package:shimmer/shimmer.dart';
 
 class RecommendedExplore extends StatefulWidget {
   const RecommendedExplore({super.key});
@@ -17,7 +19,7 @@ class _RecommendedExploreState extends State<RecommendedExplore> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const SizedBox(height: 20),
-        SizedBox(
+       CategoryList.isNotEmpty? SizedBox(
           width: double.infinity,
           height: 120,
           child: ListView.builder(
@@ -31,7 +33,18 @@ class _RecommendedExploreState extends State<RecommendedExplore> {
               return BookCardCategory(category: category);
             },
           ),
-        )
+        ):SizedBox(
+                height: 120.0,
+                child: Center(
+                  child: Shimmer.fromColors(
+                    baseColor: Colors.blue,
+                    highlightColor: Colors.white,
+                    child: ContentPlaceholder(
+                      lineType: ContentLineType.threeLines,
+                    ),
+                  ),
+                ),
+              ),
       ],
     );
   }

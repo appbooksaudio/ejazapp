@@ -43,6 +43,7 @@ class _UploadedAvatarState extends State<UploadedAvatar> {
             height: Platform.isIOS ? 100 : 85,
             child: getStartedButton()),
         body: NestedScrollView(
+          physics: NeverScrollableScrollPhysics(),
           body: Stack(children: [
             const SizedBox(height: 30),
             Padding(
@@ -70,7 +71,7 @@ class _UploadedAvatarState extends State<UploadedAvatar> {
             ),
             const SizedBox(height: 30),
             Padding(
-                padding: const EdgeInsets.only(top: 70.0, left: 10, right: 10),
+                padding: const EdgeInsets.only(top: 55.0, left: 10, right: 10),
                 child: Text(
                   AppLocalizations.of(context)!.select_profile_photo,
                   style: theme.textTheme.headlineLarge!.copyWith(

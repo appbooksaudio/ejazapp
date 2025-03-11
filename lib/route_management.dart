@@ -3,6 +3,12 @@ import 'package:ejazapp/pages/book_scanner/camerapreview.dart';
 import 'package:ejazapp/pages/Sign_pages/Sign_in/sign_in_page.dart'; //
 import 'package:ejazapp/pages/Sign_pages/Sign_in/sign_in_with_email_page.dart'; //
 import 'package:ejazapp/pages/book/book_details/view_publishers.dart';
+import 'package:ejazapp/pages/chat_pages/chat.dart';
+import 'package:ejazapp/pages/chat_pages/chat_list_screen.dart';
+import 'package:ejazapp/pages/chat_pages/chat_screen.dart';
+import 'package:ejazapp/pages/chat_pages/group_chat/create_group.dart';
+import 'package:ejazapp/pages/chat_pages/group_chat/group_chat.dart';
+import 'package:ejazapp/pages/image_screen/image_screen.dart';
 import 'package:ejazapp/pages/profile/statistic.dart';
 import 'package:ejazapp/pages/home/stories/add_post.dart';
 import 'package:ejazapp/pages/home/authors/list_authors.dart';
@@ -12,8 +18,6 @@ import 'package:ejazapp/pages/book/book_details/book_detail.dart';
 import 'package:ejazapp/pages/book/book_details/comment.dart';
 import 'package:ejazapp/pages/book/play_audio_single/player_list.dart';
 import 'package:ejazapp/pages/book/book_details/takeway.dart';
-import 'package:ejazapp/pages/book/chat_user/userchoose.dart';
-import 'package:ejazapp/pages/book/chat_user/userslist.dart';
 import 'package:ejazapp/pages/bottom_nav_page.dart';
 import 'package:ejazapp/pages/book_scanner/chat_ai.dart';
 import 'package:ejazapp/pages/for_you/category/details_category.dart';
@@ -78,7 +82,7 @@ List<GetPage<dynamic>> allPages = [
     page: () => const BottomNavPage(initialIndex: 1),
   ),
   //  GetPage(
-  //   name: Routes.chatai,
+  //   name: Routes.chatList,
   //   page: () => const BottomNavPage(initialIndex: 2),
   // ),
   GetPage(
@@ -116,11 +120,10 @@ List<GetPage<dynamic>> allPages = [
     page: () => const ChangeLanguageProfile(),
   ),
   GetPage(name: Routes.selectplan, page: () => const SelectPlan()),
-  GetPage(name: Routes.comment, page: () => const UsersPage()),
-  GetPage(name: Routes.audiobook, page: () =>  AudioBook()),
+  GetPage(name: Routes.comment, page: () => ChatListScreen()), // UsersPage()),
+  GetPage(name: Routes.audiobook, page: () => AudioBook()),
   GetPage(name: Routes.listauthors, page: () => const ListAuthors()),
   GetPage(name: Routes.comentpage, page: () => const CommentPage()),
-  GetPage(name: Routes.userchoose, page: () => const UserChoose()),
   GetPage(name: Routes.collection, page: () => const CollectionPage()),
   GetPage(name: Routes.takeway, page: () => const takeway()),
   GetPage(name: Routes.playerList, page: () => const Player()),
@@ -132,11 +135,47 @@ List<GetPage<dynamic>> allPages = [
   GetPage(name: Routes.suggesttejaz, page: () => const SuggestEjaz()),
   GetPage(name: Routes.addpost, page: () => const AddPost()),
   GetPage(name: Routes.chatai, page: () => const GeminiChat()),
-  GetPage(name: Routes.thankyou, page: () => const ThankYouPage(title: '',)),
-  GetPage(name: Routes.TakePictureScreen, page: () =>  TakePictureScreen(camera: null,)),
-  GetPage(name: Routes.viewpublishers, page: () =>  ListViewpublisher()),
-  GetPage(name: Routes.statistic, page: () =>  Statistic()),
-
-
-
+  GetPage(
+      name: Routes.thankyou,
+      page: () => const ThankYouPage(
+            title: '',
+          )),
+  GetPage(
+      name: Routes.TakePictureScreen,
+      page: () => TakePictureScreen(
+            camera: null,
+          )),
+  GetPage(
+      name: Routes.TakePictureScreen,
+      page: () => TakePictureScreen(
+            camera: Get.arguments['cameras'],
+          )),
+  GetPage(name: Routes.viewpublishers, page: () => ListViewpublisher()),
+  GetPage(name: Routes.statistic, page: () => Statistic()),
+  GetPage(
+    name: Routes.chatList,
+    page: () => ChatListScreen(),
+  ),
+  GetPage(
+    name: Routes.chat,
+    page: () => ChatScreen(
+      user: Get.arguments['user'],
+    ),
+  ),
+  GetPage(
+    name: Routes.imageView,
+    page: () => ImageScreen(),
+  ),
+   GetPage(
+    name: Routes.roomChat,
+    page: () => ChatPage(room:Get.arguments[0],user: Get.arguments[1],),
+  ),
+  GetPage(
+    name: Routes.groupchat,
+    page: () => GroupChatScreen(groupId: Get.arguments[1],),
+  ),
+  GetPage(
+    name: Routes.creategroup,
+    page: () => CreateGroupScreen(),
+  )
 ];

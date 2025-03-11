@@ -70,6 +70,7 @@ class _SignUpPageState extends State<SignUpPage> {
           height: 80,
         ),
         body: NestedScrollView(
+          physics: NeverScrollableScrollPhysics(),
           body: GetBuilder<SignUpControllerImp>(
               builder: (controller) => HandlingDataRequest(
                     statusRequest: controller.statusRequest,
@@ -306,7 +307,7 @@ class _SignUpPageState extends State<SignUpPage> {
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: theme.textTheme.bodyLarge!.copyWith(
-              color: themeProv.isDarkTheme! ? Colors.white : Colors.black,
+              color: themeProv.isDarkTheme! ? Colors.white38 : Colors.black38,
             ),
             contentPadding: EdgeInsets.only(top: isPassword ? 15.0 : 0.0),
             icon: Icon(

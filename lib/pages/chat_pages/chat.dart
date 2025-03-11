@@ -1,14 +1,15 @@
 import 'dart:io';
-
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ejazapp/helpers/routes.dart';
 import 'package:file_picker/file_picker.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
 import 'package:flutter_chat_ui/flutter_chat_ui.dart';
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
 import 'package:get/get.dart';
-// ignore: depend_on_referenced_packages
+import 'package:get/get_core/src/get_main.dart';
 import 'package:http/http.dart' as http;
 import 'package:image_picker/image_picker.dart';
 import 'package:mime/mime.dart';
@@ -19,9 +20,11 @@ class ChatPage extends StatefulWidget {
   const ChatPage({
     super.key,
     required this.room,
+    required this.user,
   });
 
   final types.Room room;
+  final User? user;
 
   @override
   State<ChatPage> createState() => _ChatPageState();
@@ -29,6 +32,15 @@ class ChatPage extends StatefulWidget {
 
 class _ChatPageState extends State<ChatPage> {
   bool _isAttachmentUploading = false;
+
+@override
+  void initState() {
+    // TODO: implement initState
+   // _user =Get.arguments[1];
+    super.initState();
+    
+  }
+
 
   void _handleAtachmentPressed() {
     showModalBottomSheet<void>(
@@ -187,11 +199,19 @@ class _ChatPageState extends State<ChatPage> {
     FirebaseChatCore.instance.updateMessage(updatedMessage, widget.room.id);
   }
 
-  void _handleSendPressed(types.PartialText message) {
+  void _handleSendPressed(types.PartialText message) async{
+   
     FirebaseChatCore.instance.sendMessage(
       message,
       widget.room.id,
     );
+
+ 
+  // ✅ Update lastMessage in the chat document
+  await FirebaseFirestore.instance.collection('chats').doc(widget.user!.uid).set({
+    'lastMessage': message.text,
+    'lastMessageTime': FieldValue.serverTimestamp(),
+  });
   }
 
   void _setAttachmentUploading(bool uploading) {
@@ -211,7 +231,7 @@ class _ChatPageState extends State<ChatPage> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             color: Colors.blue,
-            onPressed: () => Get.toNamed(Routes.comment),
+            onPressed: () { Navigator.pop(context); },//Get.toNamed(Routes.comment);},
           ),
         ),
         body: StreamBuilder<types.Room>(

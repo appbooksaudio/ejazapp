@@ -23,6 +23,7 @@ class OTPView extends GetView<HomeController> {
     final themeProv = Provider.of<ThemeProvider>(context);
     return Scaffold(
         body: NestedScrollView(
+        physics: NeverScrollableScrollPhysics(),
       body: controller.isLoaded
           ? const Center(child: CircularProgressIndicator())
           : Padding(

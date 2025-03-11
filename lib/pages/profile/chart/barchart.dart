@@ -7,10 +7,14 @@ int NBdata = 0;
 
 class BarChartE extends StatelessWidget {
   final LocaleProvider localeProv;
-  const BarChartE(this.localeProv);
+  final List<dynamic> data;
+  const BarChartE(this.localeProv, {required this.data});
 
   @override
   Widget build(BuildContext context) {
+    for (int i = 1; i < data.length; i++) {
+      // print("weekday ${data[i]['timestamp'].weekday}");
+    }
     NBdata = mybox!.get("BookRead") != null ? mybox!.get("BookRead") : 0;
     return BarChart(
       BarChartData(
@@ -55,40 +59,48 @@ class BarChartE extends StatelessWidget {
     final style = TextStyle(
       color: Colors.blue,
       fontWeight: FontWeight.bold,
-      fontSize: 12,
+      fontSize: 11,
     );
     String text;
     switch (value.toInt()) {
-      case 0:
+     
+      case 1:
         text =
             this.localeProv.localelang!.languageCode == "en" ? 'Mn' : "الاثنين";
-        break;
-      case 1:
-        text = this.localeProv.localelang!.languageCode == "en"
-            ? 'Te'
-            : "الثلاثاء";
+
         break;
       case 2:
         text = this.localeProv.localelang!.languageCode == "en"
-            ? 'Wd'
-            : "الاربعاء";
+            ? 'Te'
+            : "الثلاثاء";
+
         break;
       case 3:
-        text =
-            this.localeProv.localelang!.languageCode == "en" ? 'Tu' : "الخميس";
+        text = this.localeProv.localelang!.languageCode == "en"
+            ? 'Wd'
+            : "الاربعاء";
+
         break;
       case 4:
         text =
-            this.localeProv.localelang!.languageCode == "en" ? 'Fr' : "الجمعة";
+            this.localeProv.localelang!.languageCode == "en" ? 'Tu' : "الخميس";
+
         break;
       case 5:
         text =
-            this.localeProv.localelang!.languageCode == "en" ? 'St' : "السبت";
+            this.localeProv.localelang!.languageCode == "en" ? 'Fr' : "الجمعة";
+
         break;
       case 6:
         text =
+            this.localeProv.localelang!.languageCode == "en" ? 'St' : "السبت";
+
+        break;
+         case 7:
+        text =
             this.localeProv.localelang!.languageCode == "en" ? 'Sn' : "الاحد";
         break;
+      
       default:
         text = '';
         break;
@@ -96,7 +108,7 @@ class BarChartE extends StatelessWidget {
     return SideTitleWidget(
       axisSide: meta.axisSide,
       space: 4,
-      child: Text(text, style: style),
+      child: Text(text, style: style,),
     );
   }
 
@@ -137,22 +149,60 @@ class BarChartE extends StatelessWidget {
         end: Alignment.topCenter,
       );
 
-  List<BarChartGroupData> get barGroups => [
-        BarChartGroupData(
-          x: 0,
-          barRods: [
-            BarChartRodData(
-              toY: NBdata != 0 ? 8 : 0,
-              gradient: _barsGradient,
-            )
-          ],
-          showingTooltipIndicators: [0],
-        ),
+  List<BarChartGroupData>? get barGroups {
+    List<dynamic> uniqueList = [];
+    List<int> numbers = [ 1, 2, 3, 4, 5, 6, 7];
+    List<dynamic> book_stastic = [];
+    if (data.isNotEmpty) {
+      data[0].forEach((index, value) {
+        for (int i = 0; i < value.length; i++) book_stastic.add(value[i]);
+      });
+    }
+
+    // Use a map to store only the last occurrence
+    Map<dynamic, dynamic> uniqueMap = {
+      for (var item in book_stastic) (item["timestamp"]).toDate().weekday: item
+    };
+    
+    
+    // Convert back to a list
+    uniqueList = uniqueMap.values.toList();
+     // Find unique items in numbers that are NOT in uniqueList
+   List<int> uniqueItems = numbers.where((item) =>  !uniqueList.any((dynamic element) => (element['timestamp'].toDate().weekday) is int && (element['timestamp'].toDate().weekday) == item)).toList();
+   //add unique items to final list uniqueList
+    for(int i =0;i<uniqueItems.length;i++){
+      uniqueList.add({'booksRead':0,'timestamp':uniqueItems[i]});
+    }
+   
+    print(uniqueList);
+    // Use a map to store only the last occurrence
+
+    if (book_stastic.length > 0) {
+      return [
+        for (int i = 0; i < uniqueList.length; i++)
+          BarChartGroupData(
+            x:uniqueList[i]['timestamp'] is! int? ((uniqueList[i]['timestamp']).toDate()).weekday:uniqueList[i]['timestamp'],
+            barRods: [
+              BarChartRodData(
+                toY: NBdata != 0
+                    ? numbers.contains(uniqueList[i]['timestamp'] is! int? (((uniqueList[i]['timestamp']).toDate()).weekday) :uniqueList[i]['timestamp']) ==
+                            true
+                        ? uniqueList[i]['booksRead'].toDouble()
+                        : 0
+                    : 0,
+                gradient: _barsGradient,
+              )
+            ],
+            showingTooltipIndicators: [0],
+          ),
+      ];
+    } else {
+      return [
         BarChartGroupData(
           x: 1,
           barRods: [
             BarChartRodData(
-              toY: NBdata != 0 ? 10 : 0,
+              toY: 0,
               gradient: _barsGradient,
             )
           ],
@@ -162,7 +212,7 @@ class BarChartE extends StatelessWidget {
           x: 2,
           barRods: [
             BarChartRodData(
-              toY: NBdata != 0 ? 14 : 0,
+              toY: 0,
               gradient: _barsGradient,
             )
           ],
@@ -172,7 +222,7 @@ class BarChartE extends StatelessWidget {
           x: 3,
           barRods: [
             BarChartRodData(
-              toY: NBdata != 0 ? 15 : 0,
+              toY: 0,
               gradient: _barsGradient,
             )
           ],
@@ -182,7 +232,7 @@ class BarChartE extends StatelessWidget {
           x: 4,
           barRods: [
             BarChartRodData(
-              toY: NBdata != 0 ? 13 : 0,
+              toY: 0,
               gradient: _barsGradient,
             )
           ],
@@ -192,7 +242,7 @@ class BarChartE extends StatelessWidget {
           x: 5,
           barRods: [
             BarChartRodData(
-              toY: NBdata != 0 ? 10 : 0,
+              toY: 0,
               gradient: _barsGradient,
             )
           ],
@@ -202,11 +252,23 @@ class BarChartE extends StatelessWidget {
           x: 6,
           barRods: [
             BarChartRodData(
-              toY: NBdata != 0 ? 16 : 0,
+              toY: 0,
+              gradient: _barsGradient,
+            )
+          ],
+          showingTooltipIndicators: [0],
+        ),
+        BarChartGroupData(
+          x: 7,
+          barRods: [
+            BarChartRodData(
+              toY: 0,
               gradient: _barsGradient,
             )
           ],
           showingTooltipIndicators: [0],
         ),
       ];
+    }
+  }
 }

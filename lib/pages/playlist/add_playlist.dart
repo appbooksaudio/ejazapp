@@ -1,15 +1,18 @@
 import 'dart:async';
 
+import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/data/models/playlist.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/routes.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
+import 'package:ejazapp/widgets/placeholders.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:uuid/uuid.dart';
 
 class AddplayList extends StatefulWidget {
@@ -60,17 +63,18 @@ class _AddplayListState extends State<AddplayList> {
             slivers: [
               // A flexible app bar
               SliverAppBar(
-               // expandedHeight: 100,
-                 bottom: PreferredSize(                       // Add this code
-                preferredSize: Size.fromHeight(-35.0),      // Add this code
-                child: Text(''),                           // Add this code
-               ),
+                // expandedHeight: 100,
+                bottom: PreferredSize(
+                  // Add this code
+                  preferredSize: Size.fromHeight(-35.0), // Add this code
+                  child: Text(''), // Add this code
+                ),
                 backgroundColor: theme.colorScheme.surface,
                 // foregroundColor:
                 //     themeProv.isDarkTheme! ? Colors.blue : Colors.blue,
                 leading: IconButton(
                     onPressed: () {
-                    //  Get.offAllNamed(Routes.home);
+                      //  Get.offAllNamed(Routes.home);
                     },
                     icon: const Icon(Icons.arrow_back)),
               ),
@@ -135,15 +139,39 @@ class _AddplayListState extends State<AddplayList> {
                   ),
                   Container(
                     height: MediaQuery.of(context).size.height * 0.7,
-                    child: ListView.builder(
-                      padding: const EdgeInsets.only(top: 8.0),
-                      itemCount: mockPlayList.length,
-                      itemBuilder: (context, index) {
-                        final _playlistAu = mockPlayList[index];
+                    child: mockBookList.isNotEmpty
+                        ? ListView.builder(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            itemCount: mockPlayList.length,
+                            itemBuilder: (context, index) {
+                              final _playlistAu = mockPlayList[index];
 
-                        return PlaylistCreate(_playlistAu);
-                      },
-                    ),
+                              return PlaylistCreate(_playlistAu);
+                            },
+                          )
+                        : SizedBox(
+                            child: Center(
+                              child: Shimmer.fromColors(
+                                baseColor: Colors.blue,
+                                highlightColor: Colors.white,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      height: 40,
+                                    ),
+                                    ContentPlaceholder(
+                                      lineType: ContentLineType.threeLines,
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    BannerPlaceholder(),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
                   ),
                 ],
               ))
@@ -151,13 +179,14 @@ class _AddplayListState extends State<AddplayList> {
   }
 
   Widget PlaylistCreate(PlayList play) {
+    final theme = Theme.of(context);
     final themeProv = Provider.of<ThemeProvider>(context);
     return InkWell(
       //  onTap: () => Get.toNamed<dynamic>(Routes.addaudioplay, arguments: play),
       child: Card(
-         shadowColor: Colors.grey.shade300,
+        shadowColor: Colors.grey.shade300,
         child: Padding(
-         padding: const EdgeInsets.all( 15.0),
+          padding: const EdgeInsets.all(15.0),
           child: ListTile(
               textColor:
                   themeProv.isDarkTheme! ? Colors.white : ColorDark.background,
@@ -207,11 +236,57 @@ class _AddplayListState extends State<AddplayList> {
                                   arguments: play);
                               break;
                             case 'Delete':
-                              print('Delete clicked');
-                              // mockPlayList.removeWhere(
-                              //     (item) => item.pl_id == play.pl_id!);
-                              DeleteItem(play);
-                              setState(() {});
+                              showDialog<dynamic>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    backgroundColor: themeProv.isDarkTheme!
+                                        ? ColorDark.card
+                                        : Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(context)!
+                                          .are_you_sure,
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.headlineSmall,
+                                    ),
+                                    content: Text(
+                                      AppLocalizations.of(context)!
+                                          .deleteplaylist,
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.bodyLarge,
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () async {
+                                          print('Delete clicked');
+                                          // mockPlayList.removeWhere(
+                                          //     (item) => item.pl_id == play.pl_id!);
+                                          DeleteItem(play);
+                                          setState(() {});
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          AppLocalizations.of(context)!.yes,
+                                          style: theme.textTheme.headlineSmall!
+                                              .copyWith(
+                                                  color: theme.primaryColor),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Get.back<dynamic>(),
+                                        child: Text(
+                                          AppLocalizations.of(context)!.no,
+                                          style: theme.textTheme.titleMedium,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
+
                               break;
                             default:
                           }
@@ -220,11 +295,23 @@ class _AddplayListState extends State<AddplayList> {
                             <PopupMenuEntry<String>>[
                           PopupMenuItem<String>(
                             value: 'Edit',
-                            child: Text(AppLocalizations.of(context)!.edit),
+                            child: Text(
+                              AppLocalizations.of(context)!.edit,
+                              style: TextStyle(
+                                color: themeProv.isDarkTheme!
+                                    ? Colors.white
+                                    : ColorDark.card,
+                              ),
+                            ),
                           ),
                           PopupMenuItem<String>(
                             value: 'Delete',
-                            child: Text(AppLocalizations.of(context)!.delete),
+                            child: Text(AppLocalizations.of(context)!.delete,
+                                style: TextStyle(
+                                  color: themeProv.isDarkTheme!
+                                      ? Colors.white
+                                      : ColorDark.card,
+                                )),
                           ),
                         ],
                       ),

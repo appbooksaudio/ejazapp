@@ -11,6 +11,7 @@ import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/helpers/routes.dart';
+import 'package:ejazapp/main.dart';
 import 'package:ejazapp/pages/for_you/authors.dart';
 import 'package:ejazapp/pages/home/allcategory/all.dart';
 import 'package:ejazapp/pages/home/biography/biography.dart';
@@ -28,7 +29,9 @@ import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/widgets/LoadingListPage.dart';
 import 'package:ejazapp/widgets/book_card.dart';
+import 'package:ejazapp/widgets/check_update.dart';
 import 'package:ejazapp/widgets/custom_elevated_button.dart';
+import 'package:ejazapp/widgets/notification_alert.dart';
 import 'package:ejazapp/widgets/search_widget.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
@@ -62,7 +65,7 @@ class _HomePageState extends State<HomePage>
   late ConfettiController _controllerTopCenter;
   String? initialMessage;
   int? numNotification = 0;
-
+  List<Book> NewEjaz = [];
   //late String? fullname = Get.arguments.toString();
   int countbanner = 0;
   ScrollController? _scrollViewController;
@@ -79,7 +82,7 @@ class _HomePageState extends State<HomePage>
     _controllerTopCenter =
         ConfettiController(duration: const Duration(seconds: 10));
     _scrollViewController = ScrollController();
-    _tabController = TabController(length: 11, vsync: this);
+    _tabController = TabController(length: 10, vsync: this);
     _tabController!.addListener(_handleTabSelection);
     _scrollViewController!.addListener(() {
       if (_scrollViewController!.position.userScrollDirection ==
@@ -98,17 +101,14 @@ class _HomePageState extends State<HomePage>
         }
       }
     });
-    // books = mockBookList;
-    Future.delayed(Duration.zero, () async {
-      Provider.of<BooksApi>(context, listen: false).getBooks("en");
-      Provider.of<BooksApi>(context, listen: false).getCategory();
-      Provider.of<BooksApi>(context, listen: false).getAuthors();
-      Provider.of<BooksApi>(context, listen: false).GetSubscription();
-      Provider.of<BooksApi>(context, listen: false).GetEjazCollection();
-      Provider.of<BooksApi>(context, listen: false).getBanner();
+    //Fetch data from server
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _fetchData(); // Calls API AFTER the first frame is built
+      checkForUpdate(context);
     });
 
     init();
+    //initial the provider language
     context.read<LocaleProvider>().initState();
 
 // call firebase initnofification ////////////////
@@ -116,10 +116,40 @@ class _HomePageState extends State<HomePage>
 
     //_controllerTopCenter.play();
   }
-//****************************Start function showPopup() :  ************************/
+
+//Using Future.wait([]), you can run multiple API calls in parallel instead of waiting for each one sequentially.
+  bool _isFetching = false;
+  // Prevents duplicate API calls
+
+  Future<void> _fetchData() async {
+    final booksApi = Provider.of<BooksApi>(context, listen: false);
+    if (_isFetching || booksApi.isDataLoaded)
+      return; // Stop if fetching or already loaded
+
+    _isFetching = true;
+    booksApi.isDataLoaded = true;
+    final localprovider = Provider.of<LocaleProvider>(context, listen: false);
+    String lang = localprovider.localelang!.languageCode;
+
+    try {
+      // Step 2: Fetch  APIs concurrently
+      await Future.wait<void>([
+        // Auto-fetch books
+        booksApi.autoLoadBooks(context, lang),
+        booksApi.getAuthors(),
+        booksApi.getCategory(),
+        // booksApi.GetSubscription(),
+        booksApi.GetEjazCollection(),
+      ]);
+      print("All other APIs completed!");
+    } catch (e) {
+      print("Error in _fetchData: $e");
+    } finally {
+      _isFetching = false;
+    }
+  }
 
 //****************************Start function initNotifications() :  ************************/
-
   Future<void> initNotifications() async {
     final messaging = FirebaseMessaging.instance;
 
@@ -190,6 +220,12 @@ class _HomePageState extends State<HomePage>
             ),
           );
         }
+
+        // Show Popup Dialog
+        if (navigatorKey.currentContext != null) {
+          showNotificationDialog(navigatorKey.currentContext!,
+              notification.title, notification.body);
+        }
       });
 
       FirebaseMessaging.onMessageOpenedApp.listen((RemoteMessage message) {
@@ -215,6 +251,11 @@ class _HomePageState extends State<HomePage>
         setState(() {
           numNotification = numNotification! + 1;
         });
+        // Show Popup Dialog
+        if (navigatorKey.currentContext != null) {
+          showNotificationDialog(navigatorKey.currentContext!,
+              message.notification!.title, message.notification!.body);
+        }
       });
 
       await messaging.getInitialMessage().then((RemoteMessage? message) {
@@ -283,11 +324,18 @@ class _HomePageState extends State<HomePage>
       final titleLower = localprovider.localelang!.languageCode == 'en'
           ? book.bk_Name!.toLowerCase()
           : book.bk_Name_Ar!.toLowerCase();
-      // final authorLower = book.authors!.toLowerCase();
+      // Extract author names based on language and convert to lowercase
+      final authorLower = book.authors.map((author) {
+        // Safely extract author name based on the language
+        final name = localprovider.localelang!.languageCode == 'en'
+            ? (author['at_Name'] ?? '').toString()
+            : (author['at_Name_Ar'] ?? '').toString();
+        return name.toLowerCase();
+      }).join(' '); // Combine all author names
       final searchLower = query.toLowerCase();
 
-      return titleLower
-          .contains(searchLower); //||authorLower.contains(searchLower);
+      return titleLower.contains(searchLower) ||
+          authorLower.contains(searchLower);
     }).toList();
 
     setState(() {
@@ -423,8 +471,17 @@ class _HomePageState extends State<HomePage>
     super.dispose();
   }
 
+  List<Book> getLastNBooksAdded(List<Book> books, int n) {
+    // Sort the list by addedAt in descending order (most recent first)
+    books.sort((a, b) => DateTime.parse(b.bk_CreatedOn!)
+        .compareTo(DateTime.parse(a.bk_CreatedOn!)));
+
+    // Return the first N books, or the whole list if N is larger than the list length
+    return books.take(n).toList();
+  }
+
   List<Widget> _homeTabBarList(BuildContext context) => [
-        Tab(text: AppLocalizations.of(context)!.all),
+        //  Tab(text: AppLocalizations.of(context)!.all),
         Tab(text: AppLocalizations.of(context)!.biography),
         Tab(text: AppLocalizations.of(context)!.business),
         Tab(text: AppLocalizations.of(context)!.culture),
@@ -540,6 +597,7 @@ class _HomePageState extends State<HomePage>
     final isLoading = Provider.of<BooksApi>(context).isLooding;
     final localprovider = Provider.of<LocaleProvider>(context);
     final width = MediaQuery.of(context).size.width;
+    NewEjaz = getLastNBooksAdded(mockBookList, 10);
     return Positioned.fill(
       child: NestedScrollView(
         body: SingleChildScrollView(
@@ -632,16 +690,30 @@ class _HomePageState extends State<HomePage>
                             context,
                             title: AppLocalizations.of(context)!.recommended,
                             style: theme.textTheme.headlineLarge,
-                            trailing:
-                                localprovider.localelang!.languageCode == 'en'
-                                    ? const Icon(
-                                        Feather.chevrons_right,
-                                        color: ColorLight.primary,
-                                      )
-                                    : const Icon(
-                                        Feather.chevrons_left,
+                            trailing: localprovider.localelang!.languageCode ==
+                                    'en'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "View All",
+                                      style: TextStyle(
                                         color: ColorLight.primary,
                                       ),
+                                    ),
+                                  )
+                                // const Icon(
+                                //     Feather.chevrons_right,
+                                //     color: ColorLight.primary,
+                                //   )
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "عرض الكل",
+                                      style: TextStyle(
+                                        color: ColorLight.primary,
+                                      ),
+                                    ),
+                                  ),
                             onTap: () {
                               Get.toNamed<dynamic>(
                                 Routes.allitem,
@@ -666,7 +738,7 @@ class _HomePageState extends State<HomePage>
                           ),
                           Center(
                             child: const [
-                              AllCategory(),
+                              // AllCategory(),
                               BiographyTab(),
                               BusinessTab(),
                               CultureTab(),
@@ -794,16 +866,24 @@ class _HomePageState extends State<HomePage>
                             title:
                                 AppLocalizations.of(context)!.continue_reading,
                             style: theme.textTheme.headlineLarge,
-                            trailing:
-                                localprovider.localelang!.languageCode == 'en'
-                                    ? const Icon(
-                                        Feather.chevrons_right,
-                                        color: ColorLight.primary,
-                                      )
-                                    : const Icon(
-                                        Feather.chevrons_left,
-                                        color: ColorLight.primary,
-                                      ),
+                            trailing: localprovider.localelang!.languageCode ==
+                                    'en'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "View All",
+                                      style:
+                                          TextStyle(color: ColorLight.primary),
+                                    ),
+                                  )
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "عرض الكل",
+                                      style:
+                                          TextStyle(color: ColorLight.primary),
+                                    ),
+                                  ),
                             onTap: () {
                               Get.toNamed<dynamic>(
                                 Routes.allitem,
@@ -816,14 +896,14 @@ class _HomePageState extends State<HomePage>
                             width: double.infinity,
                             height: 270,
                             child: ListView.builder(
-                              itemCount: 23,
+                              itemCount: NewEjaz.length,
                               scrollDirection: Axis.horizontal,
                               physics: const BouncingScrollPhysics(),
                               shrinkWrap: true,
                               padding:
                                   const EdgeInsets.only(left: Const.margin),
                               itemBuilder: (context, index) {
-                                final book = mockBookList[index];
+                                final book = NewEjaz[index];
                                 return BookCard(book: book);
                               },
                             ),
@@ -837,16 +917,25 @@ class _HomePageState extends State<HomePage>
                             title:
                                 AppLocalizations.of(context)!.self_developement,
                             style: theme.textTheme.headlineLarge,
-                            trailing:
-                                localprovider.localelang!.languageCode == 'en'
-                                    ? const Icon(
-                                        Feather.chevrons_right,
-                                        color: ColorLight.primary,
-                                      )
-                                    : const Icon(
-                                        Feather.chevrons_left,
+                            trailing: localprovider.localelang!.languageCode ==
+                                    'en'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "View All",
+                                      style: TextStyle(
                                         color: ColorLight.primary,
                                       ),
+                                    ),
+                                  )
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "عرض الكل",
+                                      style:
+                                          TextStyle(color: ColorLight.primary),
+                                    ),
+                                  ),
                             onTap: () {
                               Get.toNamed<dynamic>(
                                 Routes.allitem,
@@ -866,16 +955,30 @@ class _HomePageState extends State<HomePage>
                             context,
                             title: AppLocalizations.of(context)!.top_authors,
                             style: theme.textTheme.headlineLarge,
-                            trailing:
-                                localprovider.localelang!.languageCode == 'en'
-                                    ? const Icon(
-                                        Feather.chevrons_right,
-                                        color: ColorLight.primary,
-                                      )
-                                    : const Icon(
-                                        Feather.chevrons_left,
+                            trailing: localprovider.localelang!.languageCode ==
+                                    'en'
+                                ? Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "View All",
+                                      style: TextStyle(
                                         color: ColorLight.primary,
                                       ),
+                                    ),
+                                  )
+                                // const Icon(
+                                //     Feather.chevrons_right,
+                                //     color: ColorLight.primary,
+                                //   )
+                                : Padding(
+                                    padding: const EdgeInsets.only(top: 8.0),
+                                    child: const Text(
+                                      "عرض الكل",
+                                      style: TextStyle(
+                                        color: ColorLight.primary,
+                                      ),
+                                    ),
+                                  ),
                             onTap: () {
                               Get.toNamed<dynamic>(Routes.listauthors);
                             },
@@ -892,7 +995,7 @@ class _HomePageState extends State<HomePage>
                           const MyGroupes(),
                           // const SizedBox(height: 20),
                           // const BecomeMenber(),
-                          const SizedBox(height: 60),
+                          const SizedBox(height: 20),
                           // const StoriesView(),
                           // const SizedBox(height: 60),
                         ],

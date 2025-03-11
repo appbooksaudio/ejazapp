@@ -61,4 +61,10 @@ class Routes {
   static const String TakePictureScreen = '/TakePictureScreen';
   static const String viewpublishers = '/viewpublishers';
   static const String statistic = '/statistic';
+   static const String chatList='/chatList';
+  static const String chat='/chat';
+  static const String imageView='/image';
+  static const String roomChat='/roomChat';
+  static const String groupchat='/groupchat';
+  static const String creategroup='/creategroup';
 }

@@ -1,17 +1,20 @@
 import 'dart:async';
 
+import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/data/models/playlist.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/helpers/routes.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/widgets/empty_widget.dart';
+import 'package:ejazapp/widgets/placeholders.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
 import 'package:modal_bottom_sheet/modal_bottom_sheet.dart';
 import 'package:provider/provider.dart';
+import 'package:shimmer/shimmer.dart';
 import 'package:uuid/uuid.dart';
 
 class Create_showList extends StatefulWidget {
@@ -64,17 +67,17 @@ class _Create_showListState extends State<Create_showList> {
             slivers: [
               // A flexible app bar
               SliverAppBar(
-                bottom: PreferredSize(                       // Add this code
-                 preferredSize: Size.fromHeight(-35.0),      // Add this code
-                child: Text(''),                           // Add this code
-              ),
+                bottom: PreferredSize(
+                  // Add this code
+                  preferredSize: Size.fromHeight(-35.0), // Add this code
+                  child: Text(''), // Add this code
+                ),
                 backgroundColor: theme.colorScheme.surface,
                 // foregroundColor:
                 //     themeProv.isDarkTheme! ? Colors.blue : Colors.blue,
-                leading:
-                 IconButton(
+                leading: IconButton(
                     onPressed: () {
-                     // Get.offAllNamed(Routes.home);
+                      // Get.offAllNamed(Routes.home);
                     },
                     icon: const Icon(Icons.arrow_back)),
               ),
@@ -145,17 +148,44 @@ class _Create_showListState extends State<Create_showList> {
                             thickness: 1,
                           ),
                           Container(
-                            height: MediaQuery.of(context).size.height * 0.63,
-                            child: ListView.builder(
-                              padding: const EdgeInsets.only(top: 8.0),
-                              itemCount: mockPlayList.length,
-                              itemBuilder: (context, index) {
-                                final _playlistAu = mockPlayList[index];
+                              height: MediaQuery.of(context).size.height * 0.63,
+                              child: mockBookList.isNotEmpty
+                        ? ListView.builder(
+                            padding: const EdgeInsets.only(top: 8.0),
+                            itemCount: mockPlayList.length,
+                            itemBuilder: (context, index) {
+                              final _playlistAu = mockPlayList[index];
 
-                                return PlaylistCreate(_playlistAu);
-                              },
+                              return PlaylistCreate(_playlistAu);
+                            },
+                          )
+                        : SizedBox(
+                            
+                            child: Center(
+                              child: Shimmer.fromColors(
+                                baseColor: Colors.blue,
+                                highlightColor: Colors.white,
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    SizedBox(
+                                      height: 40,
+                                    ),
+                                    ContentPlaceholder(
+                                      lineType: ContentLineType.threeLines,
+                                    ),
+                                    SizedBox(
+                                      height: 10,
+                                    ),
+                                    BannerPlaceholder(),
+                                
+                                    
+                                  ],
+                                ),
+                              ),
                             ),
                           ),
+                              ),
                         ],
                       )
                     : EmptyWidget(
@@ -172,13 +202,14 @@ class _Create_showListState extends State<Create_showList> {
   }
 
   Widget PlaylistCreate(PlayList play) {
+    final theme = Theme.of(context);
     final themeProv = Provider.of<ThemeProvider>(context);
     return InkWell(
       //  onTap: () => Get.toNamed<dynamic>(Routes.addaudioplay, arguments: play),
       child: Card(
-          shadowColor: Colors.grey.shade300,
+        shadowColor: Colors.grey.shade300,
         child: Padding(
-          padding: const EdgeInsets.all( 15.0),
+          padding: const EdgeInsets.all(15.0),
           child: ListTile(
               textColor:
                   themeProv.isDarkTheme! ? Colors.white : ColorDark.background,
@@ -191,7 +222,7 @@ class _Create_showListState extends State<Create_showList> {
                   height: 50,
                 ),
               ),
-              title:   Row(
+              title: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
@@ -209,8 +240,9 @@ class _Create_showListState extends State<Create_showList> {
                                 arguments: play);
                           },
                           icon: const Icon(
-                            Icons.play_circle_fill_outlined,
+                            Icons.play_circle_filled_outlined,
                             color: ColorLight.primary,
+                            size: 40,
                           )),
                       const SizedBox(
                         width: 10,
@@ -230,11 +262,58 @@ class _Create_showListState extends State<Create_showList> {
                                   arguments: play);
                               break;
                             case 'Delete':
+                              showDialog<dynamic>(
+                                context: context,
+                                builder: (context) {
+                                  return AlertDialog(
+                                    backgroundColor: themeProv.isDarkTheme!
+                                        ? ColorDark.card
+                                        : Colors.white,
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(15),
+                                    ),
+                                    title: Text(
+                                      AppLocalizations.of(context)!
+                                          .are_you_sure,
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.headlineSmall,
+                                    ),
+                                    content: Text(
+                                      AppLocalizations.of(context)!
+                                          .deleteplaylist,
+                                      textAlign: TextAlign.center,
+                                      style: theme.textTheme.bodyLarge,
+                                    ),
+                                    actions: [
+                                      TextButton(
+                                        onPressed: () async {
+                                          print('Delete clicked');
+                                          // mockPlayList.removeWhere(
+                                          //     (item) => item.pl_id == play.pl_id!);
+                                          DeleteItem(play);
+                                          setState(() {});
+                                          Navigator.pop(context);
+                                        },
+                                        child: Text(
+                                          AppLocalizations.of(context)!.yes,
+                                          style: theme.textTheme.headlineSmall!
+                                              .copyWith(
+                                                  color: theme.primaryColor),
+                                        ),
+                                      ),
+                                      TextButton(
+                                        onPressed: () => Get.back<dynamic>(),
+                                        child: Text(
+                                          AppLocalizations.of(context)!.no,
+                                          style: theme.textTheme.titleMedium,
+                                        ),
+                                      ),
+                                    ],
+                                  );
+                                },
+                              );
                               print('Delete clicked');
-                              // mockPlayList.removeWhere(
-                              //     (item) => item.pl_id == play.pl_id!);
-                              DeleteItem(play);
-                              setState(() {});
+
                               break;
                             default:
                           }
@@ -248,7 +327,7 @@ class _Create_showListState extends State<Create_showList> {
                               style: TextStyle(
                                 color: themeProv.isDarkTheme!
                                     ? Colors.white
-                                    : ColorDark.background,
+                                    : ColorDark.card,
                               ),
                             ),
                           ),
@@ -258,7 +337,7 @@ class _Create_showListState extends State<Create_showList> {
                                 style: TextStyle(
                                   color: themeProv.isDarkTheme!
                                       ? Colors.white
-                                      : ColorDark.background,
+                                      : ColorDark.card,
                                 )),
                           ),
                         ],
@@ -324,24 +403,26 @@ class _AddAudioState extends State<AddAudio> {
             padding: EdgeInsets.only(top: 20.0),
             child: Text(
               AppLocalizations.of(context)!.newplaylist,
-              style:  TextStyle(
+              style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: themeProv.isDarkTheme! ? ColorDark.background : Colors.white),
+                  color: themeProv.isDarkTheme!
+                      ? ColorDark.background
+                      : Colors.white),
             ),
           ),
           const SizedBox(
             height: 15,
           ),
-         
           Padding(
             padding: EdgeInsets.only(top: 30.0, left: 30, right: 30, bottom: 0),
             child: TextField(
               style: TextStyle(
                 height: 1.5,
                 color: themeProv.isDarkTheme!
-                          ? ColorDark.background
-                          : Colors.white,),
+                    ? ColorDark.background
+                    : Colors.white,
+              ),
               cursorHeight: 15,
               cursorColor: Colors.black,
               cursorWidth: 2,
@@ -350,15 +431,14 @@ class _AddAudioState extends State<AddAudio> {
               decoration: InputDecoration(
                 helperText: '30 characters',
                 helperStyle: TextStyle(color: Colors.redAccent),
-               // hintTextDirection: TextDirection.ltr,
+                // hintTextDirection: TextDirection.ltr,
                 suffixStyle: TextStyle(color: Colors.green),
                 filled: true,
                 fillColor: Colors.transparent,
                 focusColor: Colors.transparent,
                 focusedBorder: OutlineInputBorder(
                   borderSide: BorderSide(
-                      color: 
-                        themeProv.isDarkTheme!
+                      color: themeProv.isDarkTheme!
                           ? ColorDark.background
                           : Colors.white,
                       width: 0.0),
@@ -382,14 +462,13 @@ class _AddAudioState extends State<AddAudio> {
                 ),
                 hintText: AppLocalizations.of(context)!.playlisttitle,
                 hintStyle: TextStyle(
-                  height: 1.5,
+                    height: 1.5,
                     color: themeProv.isDarkTheme!
-                        ?  ColorDark.background
-                          : Colors.white,
+                        ? ColorDark.background
+                        : Colors.white,
                     fontSize: 15),
               ),
             ),
-
           ),
           Padding(
             padding: EdgeInsets.only(

@@ -93,5 +93,7 @@
 <string>Access to your camera is required to capture photos required for scanning cover book.</string>
 <key>NSMicrophoneUsageDescription</key>
 <string>Need microphone access for uploading audio</string>
+
+
 </dict>
 </plist>

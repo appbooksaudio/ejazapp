@@ -18,6 +18,7 @@ import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:flutter_windowmanager/flutter_windowmanager.dart';
@@ -64,25 +65,91 @@ class _BookDetailPageState extends State<BookDetailPage>
 
   Future<void> start() async {
     DateTime now = DateTime.now();
-    print("wwww,Time now,$now,");
     //Check number of book reading
-    int Nbook =
+    int NbookReading =
         mybox!.get("BookReading") != null ? mybox!.get("BookReading") : 0;
-    Nbook = Nbook + 1;
-    mybox!.put("BookReading", Nbook);
-    print("numer boook $Nbook");
+    NbookReading = NbookReading + 1;
+    mybox!.put("BookReading", NbookReading);
     //  initializer the timer;
     t = Timer(Duration(seconds: 120), () {
       Duration duration = DateTime.now().difference(now);
-      print("wwww,Time defference,$duration,");
       //Check number of book read
       int Nbook = mybox!.get("BookRead") != null ? mybox!.get("BookRead") : 0;
       // ignore: unnecessary_null_comparison
       Nbook = Nbook + 1;
       mybox!.put("BookRead", Nbook);
-      print("numer boook $Nbook");
+      //Total bookReading mins 1
+      mybox!.put("BookReading", NbookReading - 1);
+      addBookRead("fiction", 1, Nbook);
     });
     // and later, before the timer goes off...
+  }
+
+//********** */ function add book activity to firestore addBookRead() **********/////////
+  Future<void> addBookRead(
+      String category, int booksRead, int Totalbooks) async {
+    final FirebaseAuth _auth = FirebaseAuth.instance;
+    // Get the current date
+    DateTime now = DateTime.now();
+    final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
+    DocumentSnapshot<Map<String, dynamic>> data_bookRead =
+        await _firebaseFirestore
+            .collection('books_read')
+            .doc(_auth.currentUser!.uid)
+            .get();
+    Map<String, dynamic>? docData = data_bookRead.data();
+    print(docData);
+    if (docData != null) {
+      List<dynamic> listdate = (docData["listdate"] as List<dynamic>)
+          .map((listdate) => Map<String, dynamic>.from(listdate))
+          .toList();
+      int index = -1;
+      DateTime dateDay = DateTime.now();
+      for (int i = 0; i < listdate.length; i++) {
+        DateTime ddate = listdate[i]['timestamp'].toDate();
+        if (ddate.day == dateDay.day) {
+          index = i;
+          // return;
+        }
+      }
+      if (index != -1) {
+        listdate[index]['booksRead'] = listdate[index]['booksRead'] + booksRead;
+      } else {
+        listdate.add(
+            {'timestamp': Timestamp.fromDate(now), 'booksRead': booksRead});
+      }
+
+      await FirebaseFirestore.instance
+          .collection('books_read')
+          .doc(_auth.currentUser!.uid)
+          .set({
+        'timestamp':
+            Timestamp.fromDate(now), // Store the current time as timestamp
+        'booksRead': Totalbooks, // Number of books read
+        'category': category,
+        'bookID': book!.bk_ID,
+        'listdate': listdate // Category of the books (optional)
+      });
+    } else {
+      // Add a new document to the "books_read" collection
+
+      await FirebaseFirestore.instance
+          .collection('books_read')
+          .doc(_auth.currentUser!.uid)
+          .set({
+        'timestamp':
+            Timestamp.fromDate(now), // Store the current time as timestamp
+        'booksRead': Totalbooks, // Number of books read
+        'category': category,
+        'bookID': book!.bk_ID,
+        'listdate': [
+          {'timestamp': Timestamp.fromDate(now), 'booksRead': booksRead}
+        ]
+        // Category of the books (optional)
+      });
+    }
+
+    print("Book read data added!");
   }
 
   // ignore: always_declare_return_types, inference_failure_on_function_return_type
@@ -592,19 +659,24 @@ class _BookDetailPageState extends State<BookDetailPage>
                           ? TextAlign.right
                           : TextAlign.left,
                       style: theme.textTheme.headlineLarge!.copyWith(
-                          fontSize: 23,
-                          fontWeight: FontWeight.w500,
-                          )),
+                        fontSize: 23,
+                        fontWeight: FontWeight.w500,
+                      )),
                   children: [
-                    Text(
-                        LanguageStatus == 'ar'
-                            ? book!.bk_Introduction_Ar!
-                            : book!.bk_Introduction!,
-                        textAlign: LanguageStatus == 'ar'
-                            ? TextAlign.right
-                            : TextAlign.left,
-                        style: theme.textTheme.bodyLarge!.copyWith(
-                            fontSize: 18, fontWeight: FontWeight.w400)),
+                    Html(
+                      data: LanguageStatus == 'ar'
+                          ? book!.bk_Introduction_Ar!
+                          : book!.bk_Introduction!,
+                   ),
+                    // Text(
+                    //     LanguageStatus == 'ar'
+                    //         ? book!.bk_Introduction_Ar!
+                    //         : book!.bk_Introduction!,
+                    //     textAlign: LanguageStatus == 'ar'
+                    //         ? TextAlign.right
+                    //         : TextAlign.left,
+                    //     style: theme.textTheme.bodyLarge!.copyWith(
+                    //         fontSize: 18, fontWeight: FontWeight.w400)),
                   ],
                 ),
               ),
@@ -641,15 +713,21 @@ class _BookDetailPageState extends State<BookDetailPage>
                           style: theme.textTheme.headlineLarge!.copyWith(
                               fontSize: 23, fontWeight: FontWeight.w500)),
                       children: <Widget>[
-                        Text(
-                            LanguageStatus == 'ar'
+                        Html(
+                      data:
+                      LanguageStatus == 'ar'
                                 ? book!.bk_Summary_Ar!.replaceAll(":", " ")
                                 : book!.bk_Summary!,
-                            textAlign: LanguageStatus == 'ar'
-                                ? TextAlign.right
-                                : TextAlign.left,
-                            style: theme.textTheme.bodyLarge!.copyWith(
-                                fontSize: 18, fontWeight: FontWeight.w500)),
+                      )
+                        // Text(
+                        //     LanguageStatus == 'ar'
+                        //         ? book!.bk_Summary_Ar!.replaceAll(":", " ")
+                        //         : book!.bk_Summary!,
+                        //     textAlign: LanguageStatus == 'ar'
+                        //         ? TextAlign.right
+                        //         : TextAlign.left,
+                        //     style: theme.textTheme.bodyLarge!.copyWith(
+                        //         fontSize: 18, fontWeight: FontWeight.w500)),
                       ]),
                 )),
             const SizedBox(
@@ -686,17 +764,23 @@ class _BookDetailPageState extends State<BookDetailPage>
                       style: theme.textTheme.headlineLarge!
                           .copyWith(fontSize: 23, fontWeight: FontWeight.w500)),
                   children: [
-                    Text(
-                        book!.genres[0]['gn_Title'] == 'Fiction'
+                     Html(
+                      data: book!.genres[0]['gn_Title'] == 'Fiction'
                             ? LanguageStatus == 'ar'
                                 ? book!.bk_Characters_Ar!
                                 : book!.bk_Characters!
-                            : '',
-                        textAlign: LanguageStatus == 'ar'
-                            ? TextAlign.right
-                            : TextAlign.left,
-                        style: theme.textTheme.bodyLarge!.copyWith(
-                            fontSize: 18, fontWeight: FontWeight.w500)),
+                            : '',),
+                    // Text(
+                    //     book!.genres[0]['gn_Title'] == 'Fiction'
+                    //         ? LanguageStatus == 'ar'
+                    //             ? book!.bk_Characters_Ar!
+                    //             : book!.bk_Characters!
+                    //         : '',
+                    //     textAlign: LanguageStatus == 'ar'
+                    //         ? TextAlign.right
+                    //         : TextAlign.left,
+                    //     style: theme.textTheme.bodyLarge!.copyWith(
+                    //         fontSize: 18, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),

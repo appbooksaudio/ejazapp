@@ -80,6 +80,7 @@ class _ProfilePageState extends State<ProfilePage> {
     final paymentSatus = mybox!.get('PaymentStatus');
 
     return NestedScrollView(
+      physics: NeverScrollableScrollPhysics(),
       body: SingleChildScrollView(
         child: Column(
           children: [
@@ -337,10 +338,25 @@ class _ProfilePageState extends State<ProfilePage> {
                     style: theme.textTheme.titleLarge,
                     trailing: const Icon(Icons.arrow_forward_ios),
                     onTap: () {
-                      Get.toNamed<dynamic>(Routes.statistic,arguments: localeProv.localelang!.languageCode);
+                      name != "Guest"
+                          ? Get.toNamed<dynamic>(Routes.statistic,
+                              arguments: localeProv.localelang!.languageCode)
+                          : Get.showSnackbar(GetSnackBar(
+                              title: 'Ejaz',
+                              message: AppLocalizations.of(
+                                      Get.context as BuildContext)!
+                                  .messagetoguestuser,
+                              duration: const Duration(seconds: 5),
+                              titleText: Column(
+                                children: [],
+                              ),
+                              snackPosition: SnackPosition.TOP,
+                              backgroundColor: Colors.red,
+                              icon: const Icon(Icons.delete),
+                            ));
                     },
                   ),
-                   const SizedBox(
+                  const SizedBox(
                     height: 20,
                   ),
                   buildSettingApp(
@@ -517,16 +533,18 @@ class _ProfilePageState extends State<ProfilePage> {
                             },
                           );
                         },
-                        child: Text(
-                          AppLocalizations.of(context)!.delete_account,
-                          style: const TextStyle(
-                            height: 1.2,
-                            // fontFamily: 'Dubai',
-                            fontSize: 15,
-                            color: Colors.red,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
+                        child: name != "Guest"
+                            ? Text(
+                                AppLocalizations.of(context)!.delete_account,
+                                style: const TextStyle(
+                                  height: 1.2,
+                                  // fontFamily: 'Dubai',
+                                  fontSize: 15,
+                                  color: Colors.red,
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              )
+                            : Container(),
                       ),
                     ),
                   )
@@ -536,62 +554,73 @@ class _ProfilePageState extends State<ProfilePage> {
             const SizedBox(height: 10),
             Padding(
               padding: const EdgeInsets.all(Const.margin),
-              child: MyRaisedButton(
-                label: AppLocalizations.of(context)!.log_out,
-                onTap: () {
-                  showDialog<dynamic>(
-                    context: context,
-                    builder: (context) {
-                      return AlertDialog(
-                        backgroundColor: themeProv.isDarkTheme!
-                            ? ColorDark.card
-                            : Colors.white,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(15),
-                        ),
-                        title: Text(
-                          AppLocalizations.of(context)!.are_you_sure,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.headlineSmall,
-                        ),
-                        content: Text(
-                          AppLocalizations.of(context)!
-                              .if_you_select_log_out_it_will_return_to_the_login_screen,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyLarge,
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () async {
-                              await GoogleSignIn().signOut();
-                              //  await ;
-                              final sharedPreferences =
-                                  await SharedPreferences.getInstance();
-                              await sharedPreferences.setString('token', '');
-                              await sharedPreferences.setString('name', '');
-                              await sharedPreferences.setString('phone', '');
-                              mybox!.put('name', '');
-                              await Get.offAllNamed<dynamic>(Routes.signin);
-                            },
-                            child: Text(
-                              AppLocalizations.of(context)!.yes,
-                              style: theme.textTheme.headlineSmall!
-                                  .copyWith(color: theme.primaryColor),
-                            ),
-                          ),
-                          TextButton(
-                            onPressed: () => Get.back<dynamic>(),
-                            child: Text(
-                              AppLocalizations.of(context)!.no,
-                              style: theme.textTheme.titleMedium,
-                            ),
-                          ),
-                        ],
-                      );
-                    },
-                  );
-                },
-              ),
+              child: name != "Guest"
+                  ? MyRaisedButton(
+                      label: AppLocalizations.of(context)!.log_out,
+                      onTap: () {
+                        showDialog<dynamic>(
+                          context: context,
+                          builder: (context) {
+                            return AlertDialog(
+                              backgroundColor: themeProv.isDarkTheme!
+                                  ? ColorDark.card
+                                  : Colors.white,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(15),
+                              ),
+                              title: Text(
+                                AppLocalizations.of(context)!.are_you_sure,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.headlineSmall,
+                              ),
+                              content: Text(
+                                AppLocalizations.of(context)!
+                                    .if_you_select_log_out_it_will_return_to_the_login_screen,
+                                textAlign: TextAlign.center,
+                                style: theme.textTheme.bodyLarge,
+                              ),
+                              actions: [
+                                TextButton(
+                                  onPressed: () async {
+                                    await GoogleSignIn().signOut();
+                                    //  await ;
+                                    final sharedPreferences =
+                                        await SharedPreferences.getInstance();
+                                    await sharedPreferences.setString(
+                                        'token', '');
+                                    await sharedPreferences.setString(
+                                        'name', '');
+                                    await sharedPreferences.setString(
+                                        'phone', '');
+                                    mybox!.put('name', '');
+                                    await Get.offAllNamed<dynamic>(
+                                        Routes.signin);
+                                  },
+                                  child: Text(
+                                    AppLocalizations.of(context)!.yes,
+                                    style: theme.textTheme.headlineSmall!
+                                        .copyWith(color: theme.primaryColor),
+                                  ),
+                                ),
+                                TextButton(
+                                  onPressed: () => Get.back<dynamic>(),
+                                  child: Text(
+                                    AppLocalizations.of(context)!.no,
+                                    style: theme.textTheme.titleMedium,
+                                  ),
+                                ),
+                              ],
+                            );
+                          },
+                        );
+                      },
+                    )
+                  : MyRaisedButton(
+                      label: AppLocalizations.of(context)!.sign_in,
+                      onTap: () {
+                        mybox!.put('name', '');
+                        Get.offAllNamed<dynamic>(Routes.signin);
+                      }),
             ),
             const SizedBox(height: 60),
           ],
@@ -607,7 +636,7 @@ class _ProfilePageState extends State<ProfilePage> {
             //     : Colors.white,
             pinned: true,
             centerTitle: true,
-            automaticallyImplyLeading:false,
+            automaticallyImplyLeading: false,
           ),
         ];
       },

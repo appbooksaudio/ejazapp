@@ -190,6 +190,7 @@ class GeminiChatState extends State<GeminiChat> {
                 DashChat(
                     readOnly: true,
                     messageOptions: MessageOptions(
+                        marginDifferentAuthor: EdgeInsets.all(0),
                         currentUserContainerColor:
                             // Color.fromARGB(255, 68, 68, 68),
                             Colors.transparent,

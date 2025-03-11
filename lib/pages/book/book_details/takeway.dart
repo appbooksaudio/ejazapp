@@ -1,13 +1,16 @@
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/constants.dart';
+import 'package:ejazapp/pages/payment/paymentgateway.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/widgets/empty_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:flutter_html/flutter_html.dart';
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
+import 'package:html/parser.dart' as html_parser;
 
 class takeway extends StatefulWidget {
   const takeway({super.key});
@@ -38,12 +41,20 @@ class _takewayState extends State<takeway> {
             mockBookList[i].bk_ID == book!.bk_ID) {
           listTakeway.add((mockBookList[i]));
 
-          List takrabic = mockBookList[i].bk_Characters_Ar!.split('\n\n');
+          String htmlContent = mockBookList[i].bk_Characters_Ar!;
+          // Convert HTML to plain text
+          String plainText = html_parser.parse(htmlContent).body!.text;
+          // Split based on double newlines
+          List<String> takrabic = plainText.split(RegExp(r'\d+\.\s'));
           for (var i = 0; i < takrabic.length; i++) {
             singletakewayAr.add(takrabic[i]);
           }
 
-          List takrenglish = mockBookList[i].bk_Characters!.split('\n\n');
+          String htmlContentEn = mockBookList[i].bk_Characters!;
+          // Convert HTML to plain text
+          String plainTextEn = html_parser.parse(htmlContentEn).body!.text;
+
+          List takrenglish = plainTextEn.split(RegExp(r'\d+\.\s'));
           for (var i = 0; i < takrenglish.length; i++) {
             singletakeway.add(takrenglish[i]);
           }
@@ -88,59 +99,67 @@ class _takewayState extends State<takeway> {
                           child: ListView.separated(
                             itemCount: LanguageStatus ==
                                     'ar' //localprovider.localelang!.languageCode
-                                ? singletakewayAr.length
-                                : singletakeway.length,
+                                ? singletakewayAr.length - 1
+                                : singletakeway.length - 1,
                             itemBuilder: (context, index) {
                               return ListTile(
                                   textColor: themeProv.isDarkTheme!
                                       ? Colors.white
                                       : ColorDark.background,
                                   title: Padding(
-                                    padding: const EdgeInsets.all(8.0),
+                                    padding: const EdgeInsets.symmetric(
+                                        vertical: 8.0, horizontal: 16.0),
                                     child: Row(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.center,
                                       textDirection: LanguageStatus == 'ar'
                                           ? TextDirection.rtl
                                           : TextDirection.ltr,
                                       children: <Widget>[
-                                        Expanded(
-                                          child: Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.25,
-                                            child: Text(
-                                              textAlign: LanguageStatus == 'ar'
-                                                  ? TextAlign.center
-                                                  : TextAlign.center,
-                                              localprovider.localelang!
-                                                          .languageCode ==
-                                                      'en'
-                                                  ? '${index + 1}' //singletakewayAr[index].toString().substring(0, 2)
-                                                  : '${index + 1} ',
-                                              style: const TextStyle(
-                                                  fontSize: 25,
-                                                  fontWeight: FontWeight.bold),
+                                        // Numbering with bold font
+                                        Container(
+                                          width: 40,
+                                          alignment: Alignment.center,
+                                          child: Text(
+                                            '${index + 1}',
+                                            style: TextStyle(
+                                              fontSize: 22,
+                                              fontWeight: FontWeight.bold,
+                                              color: themeProv.isDarkTheme!
+                                                  ? Colors.white
+                                                  : ColorDark.background,
                                             ),
                                           ),
                                         ),
+                                        const SizedBox(
+                                            width:
+                                                10), // Add spacing between number and text
                                         Expanded(
-                                          flex: 6,
-                                          child: Container(
-                                            width: MediaQuery.of(context)
-                                                    .size
-                                                    .width *
-                                                0.25,
-                                            child: Text(
-                                              textDirection:
-                                                  LanguageStatus == 'ar'
-                                                      ? TextDirection.rtl
-                                                      : TextDirection.ltr,
-                                              LanguageStatus == 'ar'
-                                                  ? '${singletakewayAr[index].toString().substring(3, singletakewayAr[index].toString().length)}'
-                                                  : '${singletakeway[index].toString().substring(3, singletakeway[index].toString().length)}',
-                                              style: const TextStyle(
-                                                  fontSize: 13, height: 1.5),
-                                            ),
+                                          child: Html(
+                                            data: LanguageStatus == 'ar'
+                                                ? singletakewayAr[index + 1]
+                                                    .replaceFirst(
+                                                        RegExp(r'^\d+\.\s*'),
+                                                        '')
+                                                : singletakeway[index + 1]
+                                                    .replaceFirst(
+                                                        RegExp(r'^\d+\.\s*'),
+                                                        ''),
+                                            style: {
+                                              "body": Style(
+                                                fontSize: FontSize(18),
+                                                lineHeight:
+                                                    LineHeight.number(1.2),
+                                                textAlign: TextAlign.justify,
+                                                direction:
+                                                    LanguageStatus == 'ar'
+                                                        ? TextDirection.rtl
+                                                        : TextDirection.ltr,
+                                                color: themeProv.isDarkTheme!
+                                                    ? Colors.white70
+                                                    : ColorDark.background,
+                                              ),
+                                            },
                                           ),
                                         ),
                                       ],
@@ -176,38 +195,38 @@ class _takewayState extends State<takeway> {
               SliverAppBar(
                   actions: [
                     Padding(
-                      padding: const EdgeInsets.only(top:10.0),
+                      padding: const EdgeInsets.only(top: 10.0),
                       child: OutlinedButton.icon(
-                        onPressed: () {
-                          if (LanguageStatus == 'en') {
-                            setState(() {
-                              LanguageStatus = 'ar';
-                            });
-                          } else {
-                            setState(() {
-                              LanguageStatus = 'en';
-                            });
-                          }
-                          setState(() {});
-                        },
-                        style: ButtonStyle(
-                          backgroundColor: WidgetStateProperty.all(
-                            themeProv.isDarkTheme!
-                                ? ColorDark.background
-                                : Colors.transparent,
+                          onPressed: () {
+                            if (LanguageStatus == 'en') {
+                              setState(() {
+                                LanguageStatus = 'ar';
+                              });
+                            } else {
+                              setState(() {
+                                LanguageStatus = 'en';
+                              });
+                            }
+                            setState(() {});
+                          },
+                          style: ButtonStyle(
+                            backgroundColor: WidgetStateProperty.all(
+                              themeProv.isDarkTheme!
+                                  ? ColorDark.background
+                                  : Colors.transparent,
+                            ),
                           ),
-                        ),
-                            icon: const Icon(Icons.language, size: 30),
-                        label: Text('')
-                        // Text(
-                        //   LanguageStatus == 'ar' ? "En" : "ع",
-                        //   style: LanguageStatus == 'ar'
-                        //       ? TextStyle(
-                        //           fontSize: 18, fontWeight: FontWeight.bold)
-                        //       : TextStyle(
-                        //           fontSize: 20, fontWeight: FontWeight.bold),
-                        // ),
-                      ),
+                          icon: const Icon(Icons.language, size: 30),
+                          label: Text('')
+                          // Text(
+                          //   LanguageStatus == 'ar' ? "En" : "ع",
+                          //   style: LanguageStatus == 'ar'
+                          //       ? TextStyle(
+                          //           fontSize: 18, fontWeight: FontWeight.bold)
+                          //       : TextStyle(
+                          //           fontSize: 20, fontWeight: FontWeight.bold),
+                          // ),
+                          ),
                     ),
                   ],
                   backgroundColor: themeProv.isDarkTheme!

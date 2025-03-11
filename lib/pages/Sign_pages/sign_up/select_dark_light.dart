@@ -41,6 +41,7 @@ class _SelectDarkLightState extends State<SelectDarkLight> {
             height: Platform.isIOS ? 100 : 85,
             child: getStartedButton()),
         body: NestedScrollView(
+          physics: NeverScrollableScrollPhysics(),
           body: Stack(children: [
             const SizedBox(height: 30),
             Padding(
@@ -68,7 +69,7 @@ class _SelectDarkLightState extends State<SelectDarkLight> {
             ),
             const SizedBox(height: 30),
             Padding(
-                padding: const EdgeInsets.only(top: 70.0, left: 10, right: 10),
+                padding: const EdgeInsets.only(top: 55.0, left: 10, right: 10),
                 child: Text(
                   AppLocalizations.of(context)!.choose_dark_mode,
                   style: theme.textTheme.headlineLarge!.copyWith(

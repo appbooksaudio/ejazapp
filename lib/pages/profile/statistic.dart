@@ -1,3 +1,6 @@
+import 'dart:convert';
+
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ejazapp/core/services/services.dart';
 import 'package:ejazapp/data/models/_Statistic.dart';
 import 'package:ejazapp/data/models/book.dart';
@@ -7,12 +10,15 @@ import 'package:ejazapp/pages/profile/chart/barchart.dart';
 import 'package:ejazapp/pages/profile/chart/lineChart.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
+import 'package:ejazapp/widgets/placeholders.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:get/get.dart';
 import 'package:percent_indicator/circular_percent_indicator.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shimmer/shimmer.dart';
 
 class Statistic extends StatefulWidget {
   const Statistic({super.key});
@@ -22,6 +28,8 @@ class Statistic extends StatefulWidget {
 }
 
 class _StatisticState extends State<Statistic> {
+  late Future<List<Map<String, dynamic>>> monthlyData;
+  late Future<List<Map<String, dynamic>>> weekdayData;
   int BookRead = 0;
   int BookReading = 0;
   String lang = "en";
@@ -36,7 +44,47 @@ class _StatisticState extends State<Statistic> {
   void initState() {
     // TODO: implement initState
     super.initState();
+
+    monthlyData = getDocumentsByIds();
     GetBookTrack();
+    // weekdayData = getBooksReadForLastWeek();
+  }
+
+  Future<List<Map<String, dynamic>>> getDocumentsByIds() async {
+    try {
+      final FirebaseAuth _auth = FirebaseAuth.instance;
+      // Reference to your Firestore collection
+      CollectionReference books =
+          FirebaseFirestore.instance.collection('books_read');
+
+      // Create a list to hold the document data
+      List<Map<String, dynamic>> documentsData = [];
+
+      // Loop through each document ID and fetch the document data
+
+      DocumentSnapshot docSnapshot =
+          await books.doc(_auth.currentUser!.uid).get();
+
+      // Check if the document exists
+      if (docSnapshot.exists) {
+        documentsData.add(docSnapshot.data() as Map<String, dynamic>);
+      } else {
+        print('Document with ID ${_auth.currentUser!.uid} does not exist');
+      }
+      List<Map<String, dynamic>> listdate = [];
+      for (int i = 0; i < documentsData.length; i++) {
+        listdate.add(Map.from({'listdate': documentsData[i]['listdate']}));
+           mybox!.put("BookRead", documentsData[i]['booksRead']);
+        setState(() {
+          BookRead = mybox!.get("BookRead") != null ? mybox!.get("BookRead") : 0;
+        });
+      }
+
+      return listdate;
+    } catch (e) {
+      print('Error fetching documents: $e');
+      return [];
+    }
   }
 
   GetBookTrack() {
@@ -60,177 +108,286 @@ class _StatisticState extends State<Statistic> {
     final themeProv = Provider.of<ThemeProvider>(context);
     final orientation = MediaQuery.of(context).orientation;
     var height = MediaQuery.of(context).size.height;
-
+   
     return Scaffold(
-        body: NestedScrollView(
-      physics: NeverScrollableScrollPhysics(),
-      body: Column(
-        children: [
-          Padding(
-            padding: const EdgeInsets.only(top: 40.0),
-            child: GridView.builder(
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  mainAxisSpacing: 0,
-                  crossAxisSpacing: 0,
-                  mainAxisExtent: height * 0.20,
-                  crossAxisCount: (orientation == Orientation.portrait) ? 3 : 6,
-                  childAspectRatio: MediaQuery.of(context).size.width /
-                      (MediaQuery.of(context).size.height),
-                ),
-                itemCount: 3,
-                scrollDirection: Axis.vertical,
-                physics: NeverScrollableScrollPhysics(),
-                shrinkWrap: true,
-                padding: const EdgeInsets.only(left: Const.margin),
-                itemBuilder: (BuildContext context, int index) {
-                  return Card(
-                    // elevation: 6.0,
-                    color: themeProv.isDarkTheme!
-                        ? Colors.white
-                        : ColorDark.background,
-                    clipBehavior: Clip.hardEdge,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(20.0),
-                    ),
-                    child: Container(
-                      height: 200,
-                      width: MediaQuery.of(context).size.width,
-                      margin: const EdgeInsets.only(right: 10),
-                      decoration: BoxDecoration(
-                          color: themeProv.isDarkTheme!
-                              ? Colors.white
-                              : ColorDark.background,
-                          borderRadius: BorderRadius.horizontal(
-                            right: Radius.circular(20),
-                          )),
-                      child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        crossAxisAlignment: CrossAxisAlignment.center,
-                        children: [
-                          Container(
-                            height: 60,
-                            child: new CircularPercentIndicator(
-                              radius: 30.0,
-                              lineWidth: 6.0,
-                              percent: stat[index].number / mockBookList.length,
-                              center: new Icon(
-                                Feather.book_open,
-                                size: 20.0,
-                                color: colors[index],
-                              ),
-                              progressColor: colors[index],
-                            ),
-                          ),
-                          SizedBox(
-                            height: 15,
-                          ),
-                          Text(
-                            '${stat[index].number}',
-                            style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: colors[index]),
-                          ),
-                          Text(
-                            stat[index].month,
-                            style: TextStyle(
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                color: colors[index]),
-                          ),
-                        ],
-                      ),
-                    ),
-                  );
-                }),
-          ),
-          Flexible(
-            child: ListView(
-              children: [
-                Center(
-                    child: Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-                    child: Container(
-                      padding: EdgeInsets.all(20),
-                      height: 250,
-                      color: themeProv.isDarkTheme!
-                          ? Colors.white
-                          : ColorDark.background,
-                      child: Stack(
-                        children: <Widget>[
-                          Padding(
-                              padding: const EdgeInsets.only(
-                                right: 0,
-                                left: 0,
-                                top: 30,
-                                bottom: 5,
-                              ),
-                              child: BarChartE(localeProv)),
-                          const SizedBox(
-                            height: 37,
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.only(
-                              left: 15.0,
-                              right: 15,
-                            ),
-                            child: Text(
-                              localeProv.localelang!.languageCode == "ar"
-                                  ? 'الكتب المقروئة /اسبوع'
-                                  : "Books read/week",
-                              style: TextStyle(
-                                color: Color.fromARGB(255, 95, 94, 94),
-                                fontSize: 15,
-                                fontWeight: FontWeight.bold,
-                                letterSpacing: 0,
-                              ),
-                              textAlign: TextAlign.center,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                )),
-                SizedBox(
-                  height: 10,
-                ),
-                Center(
-                    child: Padding(
-                  padding: const EdgeInsets.all(15.0),
-                  child: ClipRRect(
-                    borderRadius: const BorderRadius.all(Radius.circular(16.0)),
-                    child: Container(
-                      padding: EdgeInsets.all(20),
-                      height: 250,
-                      color: themeProv.isDarkTheme!
-                          ? Colors.white
-                          : ColorDark.background,
-                      child: LineChartSample2(),
-                    ),
-                  ),
-                )),
-              ],
-            ),
-          ),
-        ],
+      appBar: AppBar(
+        backgroundColor: theme.colorScheme.surface,
+        foregroundColor: themeProv.isDarkTheme! ? Colors.blue : Colors.blue,
+        title: Text(AppLocalizations.of(context)!.stastic),
+        centerTitle: false,
       ),
-      headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
-        return [
-          SliverAppBar(
-              backgroundColor: theme.colorScheme.surface,
-              foregroundColor:
-                  themeProv.isDarkTheme! ? Colors.blue : Colors.blue,
-              title: Text(AppLocalizations.of(context)!.stastic),
-              titleTextStyle:
-                  theme.textTheme.titleLarge!.copyWith(fontSize: 20),
-              pinned: true,
-              centerTitle: false,
-              automaticallyImplyLeading: true),
-        ];
-      },
-    ));
+      //   body: NestedScrollView(
+      // physics: NeverScrollableScrollPhysics(),
+      body: mockBookList.isNotEmpty
+          ? Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                GridView.builder(
+                    shrinkWrap: true,
+                    physics: NeverScrollableScrollPhysics(),
+                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                      mainAxisSpacing: 0,
+                      crossAxisSpacing: 0,
+                      mainAxisExtent: 200,
+                      crossAxisCount:
+                          (orientation == Orientation.portrait) ? 3 : 6,
+                      childAspectRatio: MediaQuery.of(context).size.width /
+                          (MediaQuery.of(context).size.height),
+                    ),
+                    itemCount: 3,
+                    scrollDirection: Axis.vertical,
+                    padding: const EdgeInsets.only(
+                        left: 5, right: 5, top: 10,bottom: 20),
+                    itemBuilder: (BuildContext context, int index) {
+                      return Card(
+                        // elevation: 6.0,
+                        color: themeProv.isDarkTheme!
+                            ? Colors.white
+                            : ColorDark.background,
+                        clipBehavior: Clip.hardEdge,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20.0),
+                        ),
+                        child: Container(
+                          height: 200,
+                          width: MediaQuery.of(context).size.width,
+                          margin: const EdgeInsets.only(right: 10),
+                          decoration: BoxDecoration(
+                              color: themeProv.isDarkTheme!
+                                  ? Colors.white
+                                  : ColorDark.background,
+                              borderRadius: BorderRadius.horizontal(
+                                right: Radius.circular(20),
+                              )),
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Container(
+                                height: 60,
+                                child: new CircularPercentIndicator(
+                                  radius: 30.0,
+                                  lineWidth: 6.0,
+                                  percent:
+                                      stat[index].number / mockBookList.length,
+                                  center: new Icon(
+                                    Feather.book_open,
+                                    size: 20.0,
+                                    color: colors[index],
+                                  ),
+                                  progressColor: colors[index],
+                                ),
+                              ),
+                              SizedBox(
+                                height: 15,
+                              ),
+                              Text(
+                                '${stat[index].number}',
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: colors[index]),
+                              ),
+                              Text(
+                                stat[index].month,
+                                style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.bold,
+                                    color: colors[index]),
+                              ),
+                            ],
+                          ),
+                        ),
+                      );
+                    }),
+                Expanded(
+                  child: ListView(
+                    padding: EdgeInsets.only(top: 10), // Avoid double padding
+                    // physics: NeverScrollableScrollPhysics(),
+                    shrinkWrap: true,
+                    children: [
+                      Center(
+                          child: Padding(
+                        padding: const EdgeInsets.only(left: 12.0, right: 12),
+                        child: ClipRRect(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(16.0)),
+                          child: Container(
+                            padding: EdgeInsets.all(20),
+                            height: 250,
+                            color: themeProv.isDarkTheme!
+                                ? Colors.white
+                                : ColorDark.background,
+                            child: Stack(
+                              children: <Widget>[
+                                Padding(
+                                    padding: const EdgeInsets.only(
+                                      right: 0,
+                                      left: 0,
+                                      top: 30,
+                                      bottom: 5,
+                                    ),
+                                    child: FutureBuilder<
+                                        List<Map<String, dynamic>>>(
+                                      future: monthlyData,
+                                      builder: (context, snapshot) {
+                                        if (snapshot.connectionState ==
+                                            ConnectionState.waiting) {
+                                          return Center(
+                                              child:
+                                                  CircularProgressIndicator());
+                                        }
+
+                                        if (snapshot.hasError) {
+                                          return Text(
+                                              'Error: ${snapshot.error}');
+                                        }
+
+                                        return BarChartE(localeProv,
+                                            data: snapshot.data!.isNotEmpty
+                                                ? snapshot.data!
+                                                : []); //BooksReadChart(data: snapshot.data!);
+                                      },
+                                    )),
+                                const SizedBox(
+                                  height: 37,
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.only(
+                                    left: 30.0,
+                                    right: 30,
+                                  ),
+                                  child: Text(
+                                    localeProv.localelang!.languageCode == "ar"
+                                        ? 'الكتب المقروءة /اسبوع'
+                                        : "Books read/week",
+                                    style: TextStyle(
+                                      color: Color.fromARGB(255, 95, 94, 94),
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold,
+                                      letterSpacing: 0,
+                                    ),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      )),
+                      SizedBox(
+                        height: 30,
+                      ),
+                      Center(
+                          child: Padding(
+                        padding: const EdgeInsets.only(left: 12.0, right: 12),
+                        child: ClipRRect(
+                          borderRadius:
+                              const BorderRadius.all(Radius.circular(16.0)),
+                          child: Container(
+                            padding: EdgeInsets.all(20),
+                            height: 250,
+                            color: themeProv.isDarkTheme!
+                                ? Colors.white
+                                : ColorDark.background,
+                            child: Stack(children: [
+                              FutureBuilder<List<Map<String, dynamic>>>(
+                                future: monthlyData,
+                                builder: (context, snapshot) {
+                                  if (snapshot.connectionState ==
+                                      ConnectionState.waiting) {
+                                    return Center(
+                                        child: CircularProgressIndicator());
+                                  }
+
+                                  if (snapshot.hasError) {
+                                    return Text('Error: ${snapshot.error}');
+                                  }
+
+                                  return BooksReadChart(
+                                      data: snapshot.data!.isNotEmpty
+                                          ? snapshot.data!
+                                          : []);
+                                },
+                              ),
+                              const SizedBox(
+                                height: 37,
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.only(
+                                  left: 30.0,
+                                  right: 30,
+                                ),
+                                child: Text(
+                                  localeProv.localelang!.languageCode == "ar"
+                                      ? 'الكتب المقروءة /شهر'
+                                      : "Books read/month",
+                                  style: TextStyle(
+                                    color: Color.fromARGB(255, 95, 94, 94),
+                                    fontSize: 15,
+                                    fontWeight: FontWeight.bold,
+                                    letterSpacing: 0,
+                                  ),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ),
+                            ]),
+                          ),
+                        ),
+                      )),
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : SizedBox(
+              height: 120.0,
+              child: Center(
+                child: Shimmer.fromColors(
+                  baseColor: Colors.blue,
+                  highlightColor: Colors.white,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        height: 40,
+                      ),
+                      ContentPlaceholder(
+                        lineType: ContentLineType.threeLines,
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      BannerPlaceholder(),
+                      SizedBox(
+                        height: 20,
+                      ),
+                      ContentPlaceholder(
+                        lineType: ContentLineType.threeLines,
+                      ),
+                      SizedBox(
+                        height: 10,
+                      ),
+                      BannerPlaceholder(),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+      // headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
+      //   return [
+      //     SliverAppBar(
+      //         backgroundColor: theme.colorScheme.surface,
+      //         foregroundColor:
+      //             themeProv.isDarkTheme! ? Colors.blue : Colors.blue,
+      //         title: Text(AppLocalizations.of(context)!.stastic),
+      //         titleTextStyle:
+      //             theme.textTheme.titleLarge!.copyWith(fontSize: 20),
+      //         pinned: true,
+      //         centerTitle: false,
+      //         automaticallyImplyLeading: true),
+      //   ];
+      // },
+    );
   }
 }

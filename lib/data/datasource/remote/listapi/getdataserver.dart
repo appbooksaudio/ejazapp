@@ -14,12 +14,15 @@ import 'package:ejazapp/data/models/collections.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/helpers/routes.dart';
+import 'package:ejazapp/widgets/popup_error_connection.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:mailer/mailer.dart';
+import 'package:mailer/smtp_server/gmail.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -28,167 +31,99 @@ class BooksApi extends ChangeNotifier {
   List books = [];
   List collection = [];
   List collectionByAu = [];
+  List<Authors> listauthors = [];
+  List<Collections> collectionActive = [];
   bool isLooding = true;
+  String DEFAULT_TOKEN =
+      "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q";
+  List<Book> books2 = [];
+  bool isLoadingMore = false;
+  bool hasMoreBooks = true;
+  bool isError = false;
+  int currentPage = 1;
+  final int pageSize = 100;
+  bool isDataLoaded = false; // Adjust based on API response limits
+  //******************* Function autoLoadBooks ******************//
+  Future<void> autoLoadBooks(BuildContext context, String lang) async {
+    // mockBookList=[];
+    while (hasMoreBooks) {
+      await getBooks(context, lang);
+    }
+  }
 
 //******************* Function getbooks ******************//
+  Future<void> getBooks(BuildContext context, String lang) async {
+    if (isLoadingMore || !hasMoreBooks) return;
 
-  void getBooks(String lang) async {
-    late SharedPreferences sharedPreferences;
-    sharedPreferences = await SharedPreferences.getInstance();
-    String? authorized = sharedPreferences.getString("authorized");
-    if (authorized == null || authorized == "") {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
-    }
+    isLoadingMore = true;
+    // isLooding = false;
+    // notifyListeners();
+    try {
+      final SharedPreferences sharedPreferences =
+          await SharedPreferences.getInstance();
+      String? authorized =
+          sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
 
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      // 'Accept': 'application/json',
-      //'Content-Length': '$contentlength',
-      'Authorization': 'Bearer $authorized',
-    };
-    final url = Uri.parse(
-      AppLink.getbook,
-    );
-    final response = await http.get(
-      url,
-      headers: requestHeaders,
-    ); //,headers: requestHeaders,
+      Map<String, String> requestHeaders = {
+        'Content-type': 'application/json',
+        "User-Agent": "Ejaz-App/1.0",
+        "Connection": "keep-alive",
+        'Authorization': 'Bearer $authorized',
+      };
 
-    if (response.statusCode == 200) {
-      mockBookList = [];
-      books = json.decode(response.body) as List;
-      var i = 0;
-      books.forEach((element) {
-        Map? obj = element as Map;
-        List categories = obj['categories'] as List;
-        List authors = obj['authors'] as List;
-        List tags = obj['tags'] as List;
-        List genres = obj['genres'] as List;
-        List publishers = obj['publishers'] as List;
-        List thematicAreas = obj['thematicAreas'] as List;
-        List media = obj['media'] as List;
-        String image;
-        if (media.length > 0) {
-          image = media[0]['md_URL'] != null //md_ID
-              ? media[0]['md_URL'] as String //md_ID
-              : "5337aa5b-949b-4dd2-8563-08db749b866d";
-        } else {
-          image = '5337aa5b-949b-4dd2-8563-08db749b866d';
-        }
+      final url = Uri.parse(
+          "${AppLink.getbook}PageSize=$pageSize&PageNumber=$currentPage&OrderBy=Title&OrderAs=DESC");
 
-        //**** get audio    *////
-        String audioEn = obj['md_AudioEn_URL'] != null //md_AudioEn_ID
-            ? obj['md_AudioEn_URL'] as String //md_AudioEn_ID
-            : Const.UrlAu;
+      final response = await http
+          .get(url, headers: requestHeaders)
+          .timeout(Duration(seconds: 60));
 
-        String audioAr = obj['md_AudioAr_URL'] != null //md_AudioAr_ID
-            ? obj['md_AudioAr_URL'] as String //md_AudioAr_ID
-            : Const.UrlAu;
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = json.decode(response.body);
+        List<Book> newBooks =
+            jsonData.map((data) => Book.fromJson(data)).toList();
 
-        mockBookList.add(
-          Book(
-            bk_ID: obj['bk_ID'] as String, //as String
-            bk_Code: obj['bk_Code'] as String,
-            bk_Name: obj['bk_Name'] == 'N/A'
-                ? obj['bk_Name_Ar'] as String
-                : obj['bk_Name'] != null
-                    ? obj['bk_Name'] as String
-                    : "",
-            bk_Name_Ar:
-                obj['bk_Name_Ar'] != null ? obj['bk_Name_Ar'] as String : "",
-            bk_Introduction: obj['bk_Introduction'] == 'N/A'
-                ? obj['bk_Introduction_Ar'] as String
-                : obj['bk_Introduction'] != null
-                    ? obj['bk_Introduction'] as String
-                    : "",
-            bk_Introduction_Ar: obj['bk_Introduction_Ar'] != null
-                ? obj['bk_Introduction_Ar'] as String
-                : "",
-            bk_Summary: obj['bk_Summary'] == 'N/A'
-                ? obj['bk_Summary_Ar'] as String
-                : obj['bk_Summary'] != null
-                    ? obj['bk_Summary'] as String
-                    : "",
-            bk_Summary_Ar: obj['bk_Summary_Ar'] != null
-                ? obj['bk_Summary_Ar'] as String
-                : "",
-            bk_Characters: obj['bk_Characters'] == 'N/A'
-                ? obj['bk_Characters_Ar'] as String
-                : obj['bk_Characters'] != null
-                    ? obj['bk_Characters'] as String
-                    : "",
-            bk_Characters_Ar: obj['bk_Characters_Ar'] != null
-                ? obj['bk_Characters_Ar'] as String
-                : "",
-            bk_Desc: obj['bk_Desc'] == 'N/A'
-                ? obj['bk_Desc_Ar'] as String
-                : obj['bk_Desc'] != null
-                    ? obj['bk_Desc'] as String
-                    : "",
-            bk_Desc_Ar:
-                obj['bk_Desc_Ar'] != null ? obj['bk_Desc_Ar'] as String : "",
-            bk_Language: obj['bk_Language'] == 'N/A'
-                ? obj['bk_Language_ Ar'] as String
-                : obj['bk_Language'] != null
-                    ? obj['bk_Language'] as String
-                    : "",
-            bk_Language_Ar: obj['bk_Language_Ar'] != null
-                ? obj['bk_Language_Ar'] as String
-                : "",
-            bk_Active: obj['bk_Active'] as bool,
-            bk_CreatedOn: obj['bk_CreatedOn'] as String,
-            bk_trial: obj['bk_Trial'] as bool,
-            // bk_Modifier: obj['bk_Modifier'] as String,
-            audioEn: audioEn,
-            //'https://ejaz.applab.qa/api/ejaz/v1/Medium/getAudio/$audioEn',
-            audioAr: audioAr,
-            // 'https://ejaz.applab.qa/api/ejaz/v1/Medium/getAudio/$audioAr',
-            imagePath: image,
-            //'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image', //obj['media'] as String,
-            categories: categories,
-            authors: authors,
-            tags: tags,
-            genres: genres,
-            publishers: publishers,
-            thematicAreas: thematicAreas,
-          ),
-        );
-        i + 1;
-        this.isLooding = false;
-        notifyListeners();
-      });
-    } else {
-      this.isLooding = true;
-      books = mockBookList;
+        books2.addAll(newBooks);
+        mockBookList.addAll(newBooks);
+        currentPage++;
+        hasMoreBooks = newBooks.length ==
+            pageSize; // If fewer books are returned, stop fetching
+        isError = false;
+        if (hasMoreBooks == false) isDataLoaded = false;
+      } else {
+        handleError(context, response.body.toString(), lang);
+      }
+    } catch (e) {
+      handleError(context, e, lang);
+    } finally {
+      if (isError == false) this.isLooding = false;
+      isLoadingMore = false;
       notifyListeners();
-
-      Get.snackbar(
-        lang == "en" ? 'Alert' : 'تنبيه',
-        lang == "en"
-            ? "We'll be back soon! Server under maintaince"
-            : "سنعود قريبا! الخادم تحت الصيانة",
-        colorText: Colors.white,
-        backgroundColor: Colors.redAccent,
-        icon: const Icon(Icons.sentiment_dissatisfied),
-      );
-      // await SendEmailException(response.body, ApiName);
-      //throw Exception();
     }
-    // return books
-    //     .map((json) => Book.fromJson(json as Map<String, dynamic>))
-    //     .toList();
+  }
+
+  void handleError(BuildContext context, Object e, String lang) async {
+    isError = true;
+    print("Error fetching books: $e");
+    hasMoreBooks = false; // Stop auto-fetching on error
+    isDataLoaded = false;
+    showDialog(
+      barrierDismissible: false,
+      context: context,
+      builder: (context) => ErrorPopup(),
+    );
+    sendErrorEmail("$e", "GetBooks");
   }
 
 //******************* Function getCategory ******************//
 
   getCategory() async {
+    print("getAuthors");
     late SharedPreferences sharedPreferences;
     sharedPreferences = await SharedPreferences.getInstance();
     String? authorized = sharedPreferences.getString("authorized");
     if (authorized == null || authorized == "") {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+      authorized = DEFAULT_TOKEN;
     }
 
     Map<String, String> requestHeaders = {
@@ -233,13 +168,12 @@ class BooksApi extends ChangeNotifier {
   }
 
 //************* getAauthors   ************************* */
-  void getAuthors() async {
+  Future<void> getAuthors() async {
     late SharedPreferences sharedPreferences;
     sharedPreferences = await SharedPreferences.getInstance();
     String? authorized = sharedPreferences.getString("authorized");
     if (authorized == null || authorized == "") {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+      authorized = DEFAULT_TOKEN;
     }
 
     Map<String, String> requestHeaders = {
@@ -277,6 +211,13 @@ class BooksApi extends ChangeNotifier {
         ));
         i + 1;
       });
+
+      for (int i = 0; i < mockAuthors.length; i++) {
+        if (mockAuthors[i].at_Active == true) {
+          listauthors.add(mockAuthors[i]);
+        }
+      }
+      notifyListeners();
     } else {
       //  await SendEmailException(response.body, ApiName);
       // throw Exception();
@@ -289,8 +230,7 @@ class BooksApi extends ChangeNotifier {
     sharedPreferences = await SharedPreferences.getInstance();
     String? authorized = sharedPreferences.getString("authorized");
     if (authorized == null || authorized == "") {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+      authorized = DEFAULT_TOKEN;
     }
 
     Map<String, String> requestHeaders = {
@@ -436,13 +376,12 @@ class BooksApi extends ChangeNotifier {
 
   //******************* Function Get Subscription  ******************//
 
-  void GetSubscription() async {
+  Future<void> GetSubscription() async {
     late SharedPreferences sharedPreferences;
     sharedPreferences = await SharedPreferences.getInstance();
     String? authorized = sharedPreferences.getString("authorized");
     if (authorized == null || authorized == "") {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+      authorized = DEFAULT_TOKEN;
     }
 
     Map<String, String> requestHeaders = {
@@ -470,13 +409,13 @@ class BooksApi extends ChangeNotifier {
   }
   //******************* Function Get EjazCollection  ******************//
 
-  void GetEjazCollection() async {
+  Future<void> GetEjazCollection() async {
+    print("getAuthors");
     late SharedPreferences sharedPreferences;
     sharedPreferences = await SharedPreferences.getInstance();
     String? authorized = sharedPreferences.getString("authorized");
     if (authorized == null || authorized == "") {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+      authorized = DEFAULT_TOKEN;
     }
 
     Map<String, String> requestHeaders = {
@@ -515,68 +454,78 @@ class BooksApi extends ChangeNotifier {
         ));
         i + 1;
       });
+      for (var i = 0; i < collectionList.length; i++) {
+        if (collectionList[i].bc_Active != false)
+          collectionActive.add(collectionList[i]);
+      }
+      notifyListeners();
     } else {
       //  await SendEmailException(response.body, ApiName);
     }
   }
 
   //******************* Function Get EjazCollectionById  ******************//
-  void GetEjazCollectionById(id) async {
-    late SharedPreferences sharedPreferences;
-    sharedPreferences = await SharedPreferences.getInstance();
-    String? authorized = sharedPreferences.getString("authorized");
-    if (authorized == null || authorized == "") {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
-    }
+  Future<void> GetEjazCollectionById(String id) async {
+    try {
+      // Retrieve authorization token from SharedPreferences
+      final sharedPreferences = await SharedPreferences.getInstance();
+      String authorized =
+          sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
 
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      //'Accept': 'application/json',
-      // 'Content-Length': '$contentlength',
-      //'Host': '0',
-      'Authorization': 'Bearer $authorized'
-    };
-    final url = Uri.parse(
-      'https://ejaz.applab.qa/api/ejaz/v1/BookCollection/getBookCollection/$id',
-    );
-    final response = await http.get(
-      url,
-      headers: requestHeaders,
-    ); //,headers: requestHeaders,
+      // API request headers
+      final Map<String, String> requestHeaders = {
+        'Content-Type': 'application/json',
+        'Authorization': 'Bearer $authorized',
+      };
 
-    if (response.statusCode == 200) {
-      //  List<Book> collectionListById = [];
-      collectionListById = [];
-      Map responsecollection = {};
-      responsecollection = json.decode(response.body) as Map;
-      var i = 0;
-      responsecollection['books'].forEach((element) {
-        Map? obj = element as Map;
-        String image = responsecollection['md_ID'] as String;
-        collectionListById.add(Book(
-          bk_ID: obj['bk_ID'] as String,
-          bk_Name: responsecollection['bc_Title'] as String,
-          bk_Name_Ar: responsecollection['bc_Title_Ar'] as String,
-          imagePath:
-              'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
-          audioAr: '',
-          audioEn: '',
-          authors: [],
-          categories: [],
-          genres: [],
-          publishers: [],
-          tags: [],
-          thematicAreas: [],
-        ));
-        i + 1;
-      });
+      // Construct API URL
+      final Uri url = Uri.parse(
+          'https://ejaz.applab.qa/api/ejaz/v1/BookCollection/getBookCollection/$id');
 
-      await Get.toNamed<dynamic>(Routes.collection,
-          arguments: collectionListById);
-    } else {
-      //await SendEmailException(response.body, ApiName);
-      // throw Exception();
+      // Navigate to the collection screen before fetching data
+      final List<Book> collectionListById = []; // Initialize collection list
+
+      // Perform API request after navigation
+      final response = await http.get(url, headers: requestHeaders);
+
+      if (response.statusCode == 200) {
+        final Map<String, dynamic> responseCollection =
+            json.decode(response.body);
+
+        // Extract image ID
+        final String image = responseCollection['md_ID'] as String;
+
+        // Parse books list efficiently using `.map()`
+        collectionListById.addAll(
+          (responseCollection['books'] as List).map((book) {
+            return Book(
+              bk_ID: book['bk_ID'] as String,
+              bk_Name: responseCollection['bc_Title'] as String,
+              bk_Name_Ar: responseCollection['bc_Title_Ar'] as String,
+              imagePath:
+                  'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+              audioAr: '',
+              audioEn: '',
+              authors: [],
+              categories: [],
+              genres: [],
+              publishers: [],
+              tags: [],
+              thematicAreas: [],
+            );
+          }).toList(),
+        );
+
+        // Navigate to the collection screen after fetching data
+        await Get.toNamed<dynamic>(Routes.collection,
+            arguments: collectionListById);
+      } else {
+        debugPrint("API Error: ${response.statusCode} - ${response.body}");
+        throw Exception(
+            "Failed to fetch collection. Server returned ${response.statusCode}");
+      }
+    } catch (e, stackTrace) {
+      debugPrint("Error fetching collection: $e\n$stackTrace");
     }
   }
 
@@ -586,8 +535,7 @@ class BooksApi extends ChangeNotifier {
     sharedPreferences = await SharedPreferences.getInstance();
     String? authorized = sharedPreferences.getString("authorized");
     if (authorized == null || authorized == "") {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+      authorized = DEFAULT_TOKEN;
     }
     if (gender == "null") {
       gender = '';
@@ -662,7 +610,7 @@ class BooksApi extends ChangeNotifier {
     ); //,headers: requestHeaders,
 
     if (response.statusCode == 200) {
-      print("checklogin ${response.body}");
+      print("checklogin ${response.body},Email $value,type $type , msg ${msg}");
       if (response.body != "true") {
         await SignupGoogleApple(displayName as String, value as String,
             uid as String, type as String);
@@ -775,8 +723,7 @@ class BooksApi extends ChangeNotifier {
     sharedPreferences = await SharedPreferences.getInstance();
     String? authorized = sharedPreferences.getString('authorized');
     if (authorized == null || authorized == '') {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+      authorized = DEFAULT_TOKEN;
     }
 
     Map<String, dynamic> data = {
@@ -815,7 +762,8 @@ class BooksApi extends ChangeNotifier {
         mybox!.put("pm_Price", pm_Price);
         mybox!.put("pm_Days", pm_Days);
         print("payment success");
-        BooksApi().getBooks("en");
+
+        // BooksApi().getBooks("en");
       }
     } else {
       // throw Exception();
@@ -1060,13 +1008,12 @@ class BooksApi extends ChangeNotifier {
   }
 //******************* Function Get GetBanner  ******************//
 
-  void getBanner() async {
+  Future<void> getBanner() async {
     late SharedPreferences sharedPreferences;
     sharedPreferences = await SharedPreferences.getInstance();
     String? authorized = sharedPreferences.getString("authorized");
     if (authorized == null || authorized == "") {
-      authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+      authorized = DEFAULT_TOKEN;
     }
 
     Map<String, String> requestHeaders = {
@@ -1117,7 +1064,7 @@ PostSuggest(String Bk_Code, String Bk_Title, String Bk_Language,
   String? authorized = sharedPreferences.getString("authorized");
   if (authorized == null || authorized == "") {
     authorized =
-        'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+        "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q";
   }
 
   Map<String, String> data = {
@@ -1185,7 +1132,7 @@ PostGiftEjaz(
     String? authorized = sharedPreferences.getString("authorized");
     if (authorized == null || authorized == "") {
       authorized =
-          'eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q';
+          "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6InNoYWhyYXouaUBvdXRsb29rLmNvbSIsIm5hbWVpZCI6IjUxN2Q3NmQ2LTg4MTYtNDljNS05YWU0LTM0YWFmNzQ3YmMxZCIsImVtYWlsIjoic2hhaHJhei5pQG91dGxvb2suY29tIiwibmJmIjoxNjkwNzM5NzYzLCJleHAiOjE2OTEzNDQ1NjMsImlhdCI6MTY5MDczOTc2M30.ox73qA-VWGjc2xJwYHEgDyWA031L6k4wh7t0KotIhhK0LMsVRYrf5ZS28ocRtd3HWo2idxgNzPKOzyAmFFAG0Q";
     }
 
     var pm_Price = mybox!.get("pm_Price") != null ? mybox!.get("pm_Price") : "";
@@ -1268,3 +1215,22 @@ CloseRawSnakerbar() {
   }
 }
 
+Future<void> sendErrorEmail(String errorDetails, String apisName) async {
+  String username = 'downloadejaz@gmail.com'; // Your email
+  String password = 'davg vlft zzgi ujid'; // App Password (if using Gmail)
+
+  final smtpServer = gmail(username, password);
+
+  final message = Message()
+    ..from = Address(username, 'Ejaz Books')
+    ..recipients.add('downloadejaz@gmail.com') // Admin email
+    ..subject = '⚠️ Exception Alert: APIs Name:$apisName ${DateTime.now()}'
+    ..text = 'An error occurred in the app:\n\n$errorDetails';
+
+  try {
+    final sendReport = await send(message, smtpServer);
+    print('Email sent: ${sendReport.toString()}');
+  } catch (e) {
+    print('Failed to send email: $e');
+  }
+}

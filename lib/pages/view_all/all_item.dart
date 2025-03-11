@@ -1,4 +1,3 @@
-import 'package:date_format/date_format.dart';
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/constants.dart';
@@ -18,7 +17,8 @@ class AllItem extends StatefulWidget {
 }
 
 class _AllItemState extends State<AllItem> {
-  List<Book>? currentList = [];
+  List<Book> lastbookadeed = [];
+  List<Book>? RecentlyAdded = [];
   String namePage = "";
   String homeindex = "";
   bool isLoadingVertical = false;
@@ -27,13 +27,15 @@ class _AllItemState extends State<AllItem> {
     // TODO: implement initState
     super.initState();
     if (Get.arguments != null) {
-      currentList =
+      RecentlyAdded =
           Get.arguments[0] != "" ? Get.arguments[0] as List<Book> : null;
       namePage = Get.arguments[1] as String;
       homeindex = Get.arguments[2] != null ? Get.arguments[2] as String : "";
     }
 
     loadMore();
+    lastbookadeed = getLastNBooksAdded(mockBookList, 10);
+    print("Last books ${lastbookadeed[0].bk_Name}");
   }
 
   Future loadMore() async {
@@ -42,11 +44,18 @@ class _AllItemState extends State<AllItem> {
     });
   }
 
+  List<Book> getLastNBooksAdded(List<Book> books, int n) {
+    // Sort the list by addedAt in descending order (most recent first)
+    books.sort((a, b) => DateTime.parse(b.bk_CreatedOn!)
+        .compareTo(DateTime.parse(a.bk_CreatedOn!)));
+
+    // Return the first N books, or the whole list if N is larger than the list length
+    return books.take(n).toList();
+  }
+
   @override
   Widget build(BuildContext context) {
     var height = MediaQuery.of(context).size.height;
-    final now = DateTime.now();
-    final lastWeek = now.subtract(const Duration(days: 7));
     final themeProv = Provider.of<ThemeProvider>(context);
     final orientation = MediaQuery.of(context).orientation;
     final localeProv = Provider.of<LocaleProvider>(context);
@@ -59,19 +68,7 @@ class _AllItemState extends State<AllItem> {
           if (mockBookList[i].categories[0]['ct_Name'] == homeindex) {
             ListCat.add(mockBookList[i]);
           } else if (homeindex == 'newejaz') {
-            var formattedDate2 = formatDate(lastWeek, [yyyy, '-', mm, '-', dd]);
-            var datebook =
-                mockBookList[i].bk_CreatedOn!.toString().replaceAll("T", " ");
-
-            var dateBookC = DateTime.parse(datebook);
-            var formattedDate1 =
-                formatDate(dateBookC, [yyyy, '-', mm, '-', dd]);
-            // print("formattedDate1    $formattedDate1");
-            if ((DateTime.parse(formattedDate1))
-                    .compareTo(DateTime.parse(formattedDate2)) >
-                0) {
-              ListCat.add(mockBookList[i]);
-            }
+            ListCat = lastbookadeed;
           }
         }
       }
@@ -79,10 +76,13 @@ class _AllItemState extends State<AllItem> {
     //***************** End insert list of new books to array list     *********************//
     //***************** Start  calcul number of book     *********************//
     var numbook = namePage == 'explore'
-        ? currentList!.length
+        ? RecentlyAdded!.isEmpty
+            ? mockBookList.length
+            : RecentlyAdded!.length
         : ListCat.isEmpty
             ? mockBookList.length
             : ListCat.length;
+
     //***************** End  calcul number of book     *********************//
     return Scaffold(
         body: NestedScrollView(
@@ -111,7 +111,7 @@ class _AllItemState extends State<AllItem> {
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         mainAxisSpacing: 0,
                         crossAxisSpacing: 0,
-                        mainAxisExtent: height * 0.30,
+                        mainAxisExtent: height * 0.29,
                         crossAxisCount:
                             (orientation == Orientation.portrait) ? 3 : 6,
                         childAspectRatio: MediaQuery.of(context).size.width /
@@ -119,7 +119,9 @@ class _AllItemState extends State<AllItem> {
                       ),
                       addAutomaticKeepAlives: false,
                       itemCount: namePage == 'explore'
-                          ? currentList!.length
+                          ? RecentlyAdded!.isEmpty
+                              ? mockBookList.length
+                              : RecentlyAdded!.length
                           : ListCat.isEmpty
                               ? mockBookList.length
                               : ListCat.length,
@@ -129,11 +131,13 @@ class _AllItemState extends State<AllItem> {
                       padding: const EdgeInsets.only(left: Const.margin),
                       itemBuilder: (context, index) {
                         final book = namePage == 'explore'
-                            ? currentList![index]
+                            ? RecentlyAdded!.isEmpty
+                                ? mockBookList[index]
+                                : RecentlyAdded![index]
                             : ListCat.isEmpty
                                 ? mockBookList[index]
                                 : ListCat[index];
-                    
+
                         return BookCardDetailsCategory(book: book);
                       },
                     ),

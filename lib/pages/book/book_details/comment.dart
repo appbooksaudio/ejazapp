@@ -8,6 +8,7 @@ import 'package:ejazapp/core/services/services.dart';
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/constants.dart';
+import 'package:ejazapp/helpers/routes.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';

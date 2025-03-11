@@ -21,7 +21,7 @@ class AppLink {
   static const String updatepassword = '$server/Account/UpdatePassword';
   static const String forgetpassword = '$server/Account/updateForgotPassword';
   static const String getbook =
-      '$server/Book/getBooks/?status=active&pageSize=1000&orderBy=Title&orderAs=DESC'; //?search=&status=active&pageSize=50&orderBy=Title&orderAs=DESC
+      '$server/Book/getBooks/?status=active&'; //?search=&status=active&pageSize=50&orderBy=Title&orderAs=DESC
   static const String category = '$server/Category/getCategories';
   static const String authors = '$server/Author/getAuthors';
   static const String authorsbycollection = '$server/BookCollection/getBookCollectionsByAuthor';

@@ -80,7 +80,8 @@
       <intent-filter>
         <action android:name="android.media.browse.MediaBrowserService" />
       </intent-filter>
-    </service>
+    </service>      
+   
 
     <!-- ADD THIS "RECEIVER" element -->
     <receiver android:name="com.ryanheise.audioservice.MediaButtonReceiver"
@@ -91,5 +92,5 @@
     </receiver>
     </application>
 
-     
+   
 </manifest>

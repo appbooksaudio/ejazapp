@@ -224,7 +224,7 @@ class _SignInWithEmailPageState extends State<SignInWithEmailPage> {
           decoration: InputDecoration(
             hintText: hintText,
             hintStyle: theme.textTheme.bodyMedium!.copyWith(
-              color: themeProv.isDarkTheme! ? Colors.white : Colors.black,
+              color: themeProv.isDarkTheme! ? Colors.white38 : Colors.black38,
             ),
             contentPadding: EdgeInsets.only(top: isPassword ? 15.0 : 0.0),
             icon: Icon(

@@ -17,6 +17,7 @@ import 'package:get/get.dart';
 import 'package:octo_image/octo_image.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:shimmer/shimmer.dart';
 
 var lang = mybox!.get('lang');
 
@@ -364,69 +365,60 @@ class GroupBookVerticalCard extends StatelessWidget {
     final themeProv = Provider.of<ThemeProvider>(context);
     return Padding(
       padding: EdgeInsets.only(right: isGrid ? 0.0 : 15.0),
-      child: InkWell(
+      child: GestureDetector(
         onTap: () {
-          BooksApi().GetEjazCollectionById(collection!.bc_ID);
+          BooksApi().GetEjazCollectionById(collection!.bc_ID!);
         },
-        //  Get.toNamed<dynamic>('', arguments: collection), //Routes.bookdetail
-        borderRadius: BorderRadius.circular(15),
         child: SizedBox(
-          child: Stack(
-            children: [
-              // buildBodyCard(context),
-              SizedBox(
-                width: 240,
-                height: 280,
-                child: Card(
-                  color: themeProv.isDarkTheme!
-                      ? Color.fromARGB(255, 37, 46, 68)
-                      : Colors.white,
-                  margin: const EdgeInsets.only(bottom: 15),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(15),
-                  ),
-                  elevation: 1,
-                  child: Column(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.only(
-                            top: 20, left: 20, right: 20, bottom: 10),
-                        width: 270,
-                        height: 215,
-                        child: Container(
-                          //  padding: const EdgeInsets.all(8),
-                          // color: Colors.teal[200],
-                          child: ClipRRect(
-                            borderRadius: BorderRadius.circular(20.0),
-                            child: OctoImage(
-                              image: CachedNetworkImageProvider(
-                                  collection!.imagePath!),
-                              fit: BoxFit.cover,
-                              errorBuilder: OctoError.icon(
-                                color: Theme.of(context).colorScheme.error,
-                              ),
-                            ),
-                          ),
-                        ),
+          width: 240,
+          height: 280,
+          child: Card(
+            color: themeProv.isDarkTheme!
+                ? const Color.fromARGB(255, 37, 46, 68)
+                : Colors.white,
+            margin: const EdgeInsets.only(bottom: 15),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(15),
+            ),
+            elevation: 0,
+            child: Column(
+              children: [
+                // Image Container
+                Container(
+                  padding: const EdgeInsets.all(15),
+                  width: double.infinity,
+                  height: 215,
+                  child: ClipRRect(
+                    borderRadius: BorderRadius.circular(20.0),
+                    child: OctoImage(
+                      image: CachedNetworkImageProvider(collection!.imagePath!),
+                      fit: BoxFit.cover,
+                      errorBuilder: OctoError.icon(
+                        color: Theme.of(context).colorScheme.error,
                       ),
-                      const SizedBox(
-                        height: 10,
-                      ),
-                      Center(
-                        child: Text(
-                          localprovider.localelang!.languageCode == 'en'
-                              ? collection!.bc_Title
-                              : collection!.bc_Title_Ar,
-                          maxLines: 2,
-                          style: theme.textTheme.headlineLarge!
-                              .copyWith(height: 1, fontSize: 15),
-                        ),
-                      )
-                    ],
+                    ),
                   ),
                 ),
-              )
-            ],
+
+                const SizedBox(height: 10),
+
+                // Title
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 10),
+                  child: Text(
+                    localprovider.localelang!.languageCode == 'en'
+                        ? collection!.bc_Title
+                        : collection!.bc_Title_Ar,
+                    maxLines: 2,
+                    textAlign: TextAlign.center,
+                    style: theme.textTheme.headlineLarge!.copyWith(
+                      height: 1.2,
+                      fontSize: 15,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
       ),
@@ -671,6 +663,10 @@ class _BookCardDetailsCategoryState extends State<BookCardDetailsCategory> {
     // final devicePixelRatio = MediaQuery.of(context).devicePixelRatio;
     final theme = Theme.of(context);
     final localprovider = Provider.of<LocaleProvider>(context, listen: true);
+    double displayWidth = MediaQuery.of(context).size.width;
+    double memCacheWidth =
+        displayWidth * 2; // Double the display width for retina screens
+
     return Positioned(
         child: Column(
       crossAxisAlignment: CrossAxisAlignment.center,
@@ -679,14 +675,14 @@ class _BookCardDetailsCategoryState extends State<BookCardDetailsCategory> {
         ClipRRect(
           borderRadius: BorderRadius.circular(10.0),
           child: OctoImage(
-           // width: 200,
-            height: _isIpad == false  ? 150:200,
+            // width: 200,
+            height: 150, // _isIpad == false  ? 150:200,
             image: CachedNetworkImageProvider(
               widget.book!.imagePath,
             ),
-            // memCacheWidth: 160,
+            memCacheWidth: memCacheWidth.toInt(),
             // memCacheHeight: 250,
-            filterQuality: FilterQuality.high,
+            filterQuality: FilterQuality.low,
             fit: _isIpad == false ? BoxFit.cover : BoxFit.contain,
             placeholderBuilder: OctoPlaceholder.circularProgressIndicator(),
             errorBuilder: OctoError.icon(

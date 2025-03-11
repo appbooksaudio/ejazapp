@@ -33,6 +33,7 @@ class _AuthenticationScreenState extends State<MobileNumberPage> {
     final theme = Theme.of(context);
     return Scaffold(
         body: NestedScrollView(
+           physics: NeverScrollableScrollPhysics(),
       body: Padding(
         padding: const EdgeInsets.all(15),
         child: Column(
@@ -113,7 +114,7 @@ class _AuthenticationScreenState extends State<MobileNumberPage> {
                 }
               },
               child: Padding(
-                padding: const EdgeInsets.only(top: 4.0),
+                padding: const EdgeInsets.only(top: 5.0),
                 child: Text(
                   //"Resend New Code",
                   AppLocalizations.of(context)!.send_code,

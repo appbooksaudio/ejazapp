@@ -12,6 +12,7 @@ class Const {
   static const String empty = 'assets/empty.png';
   // F
   static const String facebook = 'assets/facebook_sign_in.png';
+   static const String updateapp = 'assets/update.png';
   // G
   static const String google = 'assets/google.png';
   // I

@@ -16,38 +16,63 @@ class NotificationList extends StatefulWidget {
 
 class _NotificationListState extends State<NotificationList> {
   get key1 => null;
+  List ListNotif = [];
+
+  @override
+  void initState() {
+    // TODO: implement initState
+    super.initState();
+    init();
+  }
+
+  init() {
+    var message = mybox!.get('message');
+    if (message != null) ListNotif = mybox!.get('message') as List;
+  }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     final themeProv = Provider.of<ThemeProvider>(context);
     // mybox!.get('message').clear();
-    List ListNotif = [];
-    var message = mybox!.get('message');
-    if (message != null) ListNotif = mybox!.get('message') as List;
 
     return Scaffold(
         body: NestedScrollView(
-          physics: NeverScrollableScrollPhysics(),
+            physics: NeverScrollableScrollPhysics(),
             body: ListNotif.isNotEmpty
                 ? ListView.separated(
                     physics: const ClampingScrollPhysics(),
                     padding: EdgeInsets.zero,
                     itemCount: ListNotif.length,
                     itemBuilder: (context, index) {
-                      return NotificationTiles(
-                        title: ListNotif[index][0].toString(),
-                        subtitle: ListNotif[index][1].toString(),
-                        date: ListNotif[index][2].toString(),
-                        enable: true,
-                        // ignore: inference_failure_on_function_invocation
-                        onTap: () {
-                          ListNotif.removeAt(index);
-                          mybox!.put('message', ListNotif);
+                      return Dismissible(
+                        key:
+                            UniqueKey(), // Using UniqueKey instead of ListNotif[index][0].toString()
+                        // Unique key for each item
+                        direction: DismissDirection
+                            .endToStart, // Swipe from right to left
+                        background: Container(
+                          color: Colors.red,
+                          alignment: Alignment.centerRight,
+                          padding: const EdgeInsets.symmetric(horizontal: 20),
+                          child: const Icon(Icons.delete, color: Colors.white),
+                        ),
+                        onDismissed: (direction) {
+                          // Remove the item and update storage
                           setState(() {
-                            ListNotif = ListNotif;
+                            ListNotif.removeAt(index);
+                            mybox!.put('message', ListNotif);
+                            // Use Future.microtask to ensure the widget tree updates properly
+                            Future.microtask(() => setState(() {}));
                           });
                         },
+                        child: NotificationTiles(
+                          title: ListNotif[index][0].toString(),
+                          subtitle: ListNotif[index][1].toString(),
+                          date: ListNotif[index][2].toString(),
+                          enable: true,
+                          onTap: () {},
+                        ),
                       );
                     },
                     separatorBuilder: (context, index) {
@@ -57,7 +82,8 @@ class _NotificationListState extends State<NotificationList> {
                             : Colors.black,
                         height: 2,
                       );
-                    })
+                    },
+                  )
                 : Center(
                     child: EmptyWidget(
                       image: Const.notificationsstate,

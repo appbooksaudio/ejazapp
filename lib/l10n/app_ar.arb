@@ -693,7 +693,7 @@
   "show": "Menunjukkan",
   "show_less": "عرض أقل",
   "show_more": "أظهر المزيد",
-  "sign_in": "Masuk",
+  "sign_in": "تسجيل الدخول",
   "sign_in_to_continue": "Masuk untuk melanjutkan",
   "sign_in_with": "Masuk dengan",
   "sign_in_with_email": "Masuk dengan email",
@@ -1009,7 +1009,18 @@
               "stastic":"إحصائيات القراءة",
               "booktrack":"مسار الكتب",
               "cannotemail":"لا يمكنك حاليًا تغيير كلمة المرور الخاصة بك باستخدام البريد الإلكتروني",
-              "passwordwrong":"كلمة المرور أو البريد الإلكتروني خاطئ"
+              "passwordwrong":"كلمة المرور أو البريد الإلكتروني خاطئ",
+              "deleteplaylist":"هل أنت متأكد تريد حذف قائمة التشغيل؟",
+               "message": "دردشة",
+                "passwordwrong":"كلمة المرور أو البريد الإلكتروني خاطئ",
+              "ejazChat": "دردشة إيجاز",
+              "allChat":"جميع الدردشات",
+              "unreadChat":"الدردشات غير المقروءة",
+              "groupChat":"دردشة جماعية",
+              "searchChat":"بحث في الدردشة",
+              "today":"اليوم",
+              "typeChatHere":"اكتب رسالة..."
+             
 
 
 

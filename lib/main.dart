@@ -13,6 +13,7 @@ import 'package:ejazapp/providers/download_provider.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/route_management.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_gemini/flutter_gemini.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
@@ -21,17 +22,24 @@ import 'package:get/get.dart';
 
 import 'package:provider/provider.dart';
 
+final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  debugPrint("Handling background message: ${message.messageId}");
+}
+
 Future<dynamic> main() async {
   HttpOverrides.global = MyHttpOverrides();
   WidgetsFlutterBinding.ensureInitialized();
+  FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
   await initialServices();
   DependencyInjection.init();
 
   Gemini.init(
-  //  apiKey: const String.fromEnvironment('AIzaSyADYJlCFblzBf7apV-2rr74rJdmomJk-2w'), enableDebugging: true);
-   apiKey: "AIzaSyADYJlCFblzBf7apV-2rr74rJdmomJk-2w",//"AIzaSyA4NZiRhArE_1oOa2ACEWQeEUJGZ94okWo",
+    //  apiKey: const String.fromEnvironment('AIzaSyADYJlCFblzBf7apV-2rr74rJdmomJk-2w'), enableDebugging: true);
+    apiKey:
+        "AIzaSyADYJlCFblzBf7apV-2rr74rJdmomJk-2w", //"AIzaSyA4NZiRhArE_1oOa2ACEWQeEUJGZ94okWo",
   );
- 
+
   runApp(const MyApp());
 }
 
@@ -62,6 +70,7 @@ class MyApp extends StatelessWidget {
       child: Consumer2<ThemeProvider, LocaleProvider>(
         builder: (context, theme, locale, child) {
           return GetMaterialApp(
+            navigatorKey: navigatorKey, // Assign navigator key
             title: 'Ejaz App',
             debugShowCheckedModeBanner: false,
             defaultTransition: Transition.rightToLeftWithFade,

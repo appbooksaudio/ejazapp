@@ -221,10 +221,11 @@ class _AddAudioPlayState extends State<AddAudioPlay> {
                             height: 45.0,
                             child: OutlinedButton(
                               onPressed: () {
-                                Get.toNamed<dynamic>(
-                                  Routes.playerList,
-                                  arguments: [CurrenPlayList,localprovider.localelang!.languageCode]
-                                );
+                                Get.toNamed<dynamic>(Routes.playerList,
+                                    arguments: [
+                                      CurrenPlayList,
+                                      localprovider.localelang!.languageCode
+                                    ]);
                                 // ignore: omit_local_variable_types
                                 AudioPlayer? player =
                                     Provider.of<MyState>(context, listen: false)
@@ -369,9 +370,20 @@ class _AddAudioPlayState extends State<AddAudioPlay> {
                                       padding: const EdgeInsets.only(top: 8.0),
                                       itemCount: AudioList.length,
                                       itemBuilder: (context, index) {
-                                        final book = AudioList[index];
+                                        Book book;
+                                        String emptyAudioUrl =
+                                            "https://ejaz.applab.qa/api/ejaz/v1/Medium/getAudio/00000000-0000-0000-0000-000000000000";
 
-                                        return AddAudioSumm(book);
+                                        if (AudioList[index].audioEn !=
+                                                emptyAudioUrl ||
+                                            AudioList[index].audioAr !=
+                                                emptyAudioUrl) {
+                                          book = AudioList[index];
+                                          return AddAudioSumm(book);
+                                        } else {
+                                          // Handle case where the URL matches
+                                          return Container(); // Or return any other widget to handle this scenario
+                                        }
                                       },
                                     ),
                             ),
@@ -425,7 +437,7 @@ class _AddAudioPlayState extends State<AddAudioPlay> {
                       setState(() {});
                     },
                     icon: const Icon(
-                      Icons.minimize,
+                      Icons.delete,
                       color: Colors.grey,
                     )),
                 IconButton(
