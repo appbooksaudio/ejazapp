@@ -107,6 +107,8 @@ class BooksApi extends ChangeNotifier {
     print("Error fetching books: $e");
     hasMoreBooks = false; // Stop auto-fetching on error
     isDataLoaded = false;
+    //delays between API calls
+    await Future.delayed(Duration(seconds: 3));
     showDialog(
       barrierDismissible: false,
       context: context,
@@ -164,12 +166,10 @@ class BooksApi extends ChangeNotifier {
           i + 1;
         });
       } else {
-        //  await SendEmailException(response.body, ApiName);
-        //throw Exception();
+        sendErrorEmail("${response.body}", "getCategory");
       }
     } catch (e) {
       print(e);
-      sendErrorEmail("$e", "getCategory");
     }
   }
 
@@ -226,12 +226,10 @@ class BooksApi extends ChangeNotifier {
         }
         notifyListeners();
       } else {
-        //  await SendEmailException(response.body, ApiName);
-        // throw Exception();
+        sendErrorEmail("${response.body}", "getAuthors");
       }
     } catch (e) {
       print(e);
-      sendErrorEmail("$e", "getAuthors");
     }
   }
 
@@ -280,12 +278,10 @@ class BooksApi extends ChangeNotifier {
           i + 1;
         });
       } else {
-        //  await SendEmailException(response.body, ApiName);
-        // throw Exception();
+        sendErrorEmail("${response.body}", "getAuthorsbyCollections");
       }
     } catch (e) {
       print(e);
-      sendErrorEmail("$e", "getAuthorsbyCollections");
     }
   }
 
@@ -293,93 +289,97 @@ class BooksApi extends ChangeNotifier {
 
   SignupGoogleApple(
       String username, String? email, String? FirebaseUID, String type) async {
-    var uid = Uuid().v4();
-    // ignore: omit_local_variable_types
-    Map<String, String> data = {
-      "FirebaseUID": FirebaseUID!,
-      "FirebaseToken": "dfgdfg",
-      "DisplayName": type == 'google' ? username : email as String,
-      "Username": type == 'google'
-          ? username + "@" + uid.split('-')[0]
-          : email as String,
-      "Password": 'GoogleApple@12345',
-      "Email": email!,
-      "PhoneNumber": FirebaseUID,
-      "Language": "All",
-    };
-    // ignore: prefer_final_locals
-    int contentlength = utf8.encode(json.encode(data)).length;
+    try {
+      var uid = Uuid().v4();
+      // ignore: omit_local_variable_types
+      Map<String, String> data = {
+        "FirebaseUID": FirebaseUID!,
+        "FirebaseToken": "dfgdfg",
+        "DisplayName": type == 'google' ? username : email as String,
+        "Username": type == 'google'
+            ? username + "@" + uid.split('-')[0]
+            : email as String,
+        "Password": 'GoogleApple@12345',
+        "Email": email!,
+        "PhoneNumber": FirebaseUID,
+        "Language": "All",
+      };
+      // ignore: prefer_final_locals
+      int contentlength = utf8.encode(json.encode(data)).length;
 
-    // ignore: omit_local_variable_types
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      //'Accept': 'application/json',
-      'Content-Length': '$contentlength',
-      //'Host': '0',
-      // 'Authorization': 'Bearer $authorized'
-    };
-    final msg = jsonEncode(data);
-    final url = Uri.parse(
-      AppLink.signup,
-    );
-    final response = await http.post(url,
-        headers: requestHeaders, body: msg); //,headers: requestHeaders,
+      // ignore: omit_local_variable_types
+      Map<String, String> requestHeaders = {
+        'Content-type': 'application/json',
+        //'Accept': 'application/json',
+        'Content-Length': '$contentlength',
+        //'Host': '0',
+        // 'Authorization': 'Bearer $authorized'
+      };
+      final msg = jsonEncode(data);
+      final url = Uri.parse(
+        AppLink.signup,
+      );
+      final response = await http.post(url,
+          headers: requestHeaders, body: msg); //,headers: requestHeaders,
 
-    if (response.statusCode == 200) {
-      SharedPreferences sharedPreferences =
-          await SharedPreferences.getInstance();
-      final responsebody = json.decode(response.body) as Map<String, dynamic>;
-      await mybox!.put('islogin', true);
-      if (responsebody['isSubscribed'] == true) {
-        mybox!.put('PaymentStatus', 'success');
-        await sharedPreferences.setString(
-            'name', responsebody['displayName'] as String);
-        await sharedPreferences.setString(
-            "authorized", responsebody['token'] as String);
-        await sharedPreferences.setString(
-            "image", responsebody['image'] as String);
-        /********************Start Firebase generate token *********************/
-        await FirebaseMessaging.instance.getToken().then((value) {
-          print(value);
-          String? token = value;
-          sharedPreferences.setString('token', token!);
-          UpdateFirebaseToken(token);
-        });
+      if (response.statusCode == 200) {
+        SharedPreferences sharedPreferences =
+            await SharedPreferences.getInstance();
+        final responsebody = json.decode(response.body) as Map<String, dynamic>;
+        await mybox!.put('islogin', true);
+        if (responsebody['isSubscribed'] == true) {
+          mybox!.put('PaymentStatus', 'success');
+          await sharedPreferences.setString(
+              'name', responsebody['displayName'] as String);
+          await sharedPreferences.setString(
+              "authorized", responsebody['token'] as String);
+          await sharedPreferences.setString(
+              "image", responsebody['image'] as String);
+          /********************Start Firebase generate token *********************/
+          await FirebaseMessaging.instance.getToken().then((value) {
+            print(value);
+            String? token = value;
+            sharedPreferences.setString('token', token!);
+            UpdateFirebaseToken(token);
+          });
 
-        /********************End Firebase generate token *********************/
+          /********************End Firebase generate token *********************/
 
-        await Get.offAllNamed(Routes.home, arguments: "");
-      } else if (responsebody['isSubscribed'] == false) {
-        mybox!.put('PaymentStatus', 'pending');
+          await Get.offAllNamed(Routes.home, arguments: "");
+        } else if (responsebody['isSubscribed'] == false) {
+          mybox!.put('PaymentStatus', 'pending');
 
-        await sharedPreferences.setString(
-            'name', responsebody['displayName'] as String);
-        await sharedPreferences.setString(
-            "authorized", responsebody['token'] as String);
-        await sharedPreferences.setString(
-            "image", responsebody['image'] as String);
-        /********************Start Firebase generate token *********************/
-        await FirebaseMessaging.instance.getToken().then((value) {
-          print(value);
-          String? token = value;
-          sharedPreferences.setString('token', token!);
-          UpdateFirebaseToken(token);
-        });
+          await sharedPreferences.setString(
+              'name', responsebody['displayName'] as String);
+          await sharedPreferences.setString(
+              "authorized", responsebody['token'] as String);
+          await sharedPreferences.setString(
+              "image", responsebody['image'] as String);
+          /********************Start Firebase generate token *********************/
+          await FirebaseMessaging.instance.getToken().then((value) {
+            print(value);
+            String? token = value;
+            sharedPreferences.setString('token', token!);
+            UpdateFirebaseToken(token);
+          });
 
-        /********************End Firebase generate token *********************/
+          /********************End Firebase generate token *********************/
 
-        await Get.offAllNamed(Routes.home, arguments: "");
-      }
-    } else {
-      print("response  ${response.body}");
-      sendErrorEmail("${response.body}", "SignupGoogleApple");
-      // await SendEmailException(response.body, ApiName);
-      Get.rawSnackbar(
-          messageText: const Text('User Name or Email Exist!',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 14)),
+          await Get.offAllNamed(Routes.home, arguments: "");
+        }
+      } else {
+        print("response  ${response.body}");
+        sendErrorEmail("${response.body}", "SignupGoogleApple");
+        Get.rawSnackbar(
+          messageText: Text(
+            Get.locale?.languageCode == 'ar'
+                ? 'اسم المستخدم أو البريد الإلكتروني موجود!'
+                : 'User Name or Email Exist!',
+            textAlign: TextAlign.center,
+            style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
           isDismissible: false,
-          duration: const Duration(days: 1),
+          duration: const Duration(seconds: 1),
           backgroundColor: ColorLight.primary,
           icon: const Icon(
             Icons.sentiment_very_dissatisfied,
@@ -387,7 +387,17 @@ class BooksApi extends ChangeNotifier {
             size: 35,
           ),
           margin: EdgeInsets.zero,
-          snackStyle: SnackStyle.GROUNDED);
+          snackStyle: SnackStyle.GROUNDED,
+        );
+
+// Close it after 1 second
+        Future.delayed(Duration(seconds: 2), () {
+          Get.closeCurrentSnackbar();
+        });
+      }
+    } catch (e) {
+      print(e);
+      sendErrorEmail("$e", "SignupGoogleApple");
     }
   }
 
