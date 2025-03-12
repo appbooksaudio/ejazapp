@@ -119,157 +119,173 @@ class BooksApi extends ChangeNotifier {
 
   getCategory() async {
     print("getAuthors");
-    late SharedPreferences sharedPreferences;
-    sharedPreferences = await SharedPreferences.getInstance();
-    String? authorized = sharedPreferences.getString("authorized");
-    if (authorized == null || authorized == "") {
-      authorized = DEFAULT_TOKEN;
-    }
 
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      //'Accept': 'application/json',
-      // 'Content-Length': '$contentlength',
-      //'Host': '0',
-      'Authorization': 'Bearer $authorized'
-    };
-    final url = Uri.parse(
-      AppLink.category,
-    );
-    final response = await http.get(
-      url,
-      headers: requestHeaders,
-    ); //,headers: requestHeaders,
+    try {
+      late SharedPreferences sharedPreferences;
+      sharedPreferences = await SharedPreferences.getInstance();
+      String? authorized = sharedPreferences.getString("authorized");
+      if (authorized == null || authorized == "") {
+        authorized = DEFAULT_TOKEN;
+      }
 
-    if (response.statusCode == 200) {
-      CategoryList = [];
-      books = json.decode(response.body) as List;
-      var i = 0;
-      books.forEach((element) {
-        Map? obj = element as Map;
-        String image = obj['md_ID'] != null ? obj['md_ID'] as String : "";
-        CategoryList.add(CategoryL(
-            ct_ID: obj['ct_ID'] as String,
-            ct_Name: obj['ct_Name'] as String,
-            ct_Title: obj['ct_Title'] as String,
-            ct_Name_Ar: obj['ct_Name_Ar'] as String,
-            ct_Title_Ar: obj['ct_Title_Ar'] as String,
-            id: 0,
-            imagePath:
-                'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
-            md_ID: '',
-            title: ''));
-        i + 1;
-      });
-    } else {
-      //  await SendEmailException(response.body, ApiName);
-      //throw Exception();
+      Map<String, String> requestHeaders = {
+        'Content-type': 'application/json',
+        //'Accept': 'application/json',
+        // 'Content-Length': '$contentlength',
+        //'Host': '0',
+        'Authorization': 'Bearer $authorized'
+      };
+      final url = Uri.parse(
+        AppLink.category,
+      );
+      final response = await http.get(
+        url,
+        headers: requestHeaders,
+      ); //,headers: requestHeaders,
+
+      if (response.statusCode == 200) {
+        CategoryList = [];
+        books = json.decode(response.body) as List;
+        var i = 0;
+        books.forEach((element) {
+          Map? obj = element as Map;
+          String image = obj['md_ID'] != null ? obj['md_ID'] as String : "";
+          CategoryList.add(CategoryL(
+              ct_ID: obj['ct_ID'] as String,
+              ct_Name: obj['ct_Name'] as String,
+              ct_Title: obj['ct_Title'] as String,
+              ct_Name_Ar: obj['ct_Name_Ar'] as String,
+              ct_Title_Ar: obj['ct_Title_Ar'] as String,
+              id: 0,
+              imagePath:
+                  'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+              md_ID: '',
+              title: ''));
+          i + 1;
+        });
+      } else {
+        //  await SendEmailException(response.body, ApiName);
+        //throw Exception();
+      }
+    } catch (e) {
+      print(e);
+      sendErrorEmail("$e", "getCategory");
     }
   }
 
 //************* getAauthors   ************************* */
   Future<void> getAuthors() async {
-    late SharedPreferences sharedPreferences;
-    sharedPreferences = await SharedPreferences.getInstance();
-    String? authorized = sharedPreferences.getString("authorized");
-    if (authorized == null || authorized == "") {
-      authorized = DEFAULT_TOKEN;
-    }
-
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      //'Accept': 'application/json',
-      // 'Content-Length': '$contentlength',
-      //'Host': '0',
-      'Authorization': 'Bearer $authorized'
-    };
-    final url = Uri.parse(
-      AppLink.authors,
-    );
-    final response = await http.get(
-      url,
-      headers: requestHeaders,
-    ); //,headers: requestHeaders,
-
-    if (response.statusCode == 200) {
-      mockAuthors = [];
-      books = json.decode(response.body) as List;
-      var i = 0;
-      books.forEach((element) {
-        Map? obj = element as Map;
-        String image = obj['md_ID'] as String;
-        mockAuthors.add(Authors(
-          at_ID: obj['at_ID'] as String,
-          at_Name: obj['at_Name'] as String,
-          at_Name_Ar: obj['at_Name_Ar'] as String,
-          imagePath:
-              'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
-          at_Active: obj['at_Active'] as bool,
-          at_Desc: obj['at_Desc'] as String,
-          at_Desc_Ar: obj['at_Desc_Ar'] as String,
-          isDarkMode: true,
-        ));
-        i + 1;
-      });
-
-      for (int i = 0; i < mockAuthors.length; i++) {
-        if (mockAuthors[i].at_Active == true) {
-          listauthors.add(mockAuthors[i]);
-        }
+    try {
+      late SharedPreferences sharedPreferences;
+      sharedPreferences = await SharedPreferences.getInstance();
+      String? authorized = sharedPreferences.getString("authorized");
+      if (authorized == null || authorized == "") {
+        authorized = DEFAULT_TOKEN;
       }
-      notifyListeners();
-    } else {
-      //  await SendEmailException(response.body, ApiName);
-      // throw Exception();
+
+      Map<String, String> requestHeaders = {
+        'Content-type': 'application/json',
+        //'Accept': 'application/json',
+        // 'Content-Length': '$contentlength',
+        //'Host': '0',
+        'Authorization': 'Bearer $authorized'
+      };
+      final url = Uri.parse(
+        AppLink.authors,
+      );
+      final response = await http.get(
+        url,
+        headers: requestHeaders,
+      ); //,headers: requestHeaders,
+
+      if (response.statusCode == 200) {
+        mockAuthors = [];
+        books = json.decode(response.body) as List;
+        var i = 0;
+        books.forEach((element) {
+          Map? obj = element as Map;
+          String image = obj['md_ID'] as String;
+          mockAuthors.add(Authors(
+            at_ID: obj['at_ID'] as String,
+            at_Name: obj['at_Name'] as String,
+            at_Name_Ar: obj['at_Name_Ar'] as String,
+            imagePath:
+                'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+            at_Active: obj['at_Active'] as bool,
+            at_Desc: obj['at_Desc'] as String,
+            at_Desc_Ar: obj['at_Desc_Ar'] as String,
+            isDarkMode: true,
+          ));
+          i + 1;
+        });
+
+        for (int i = 0; i < mockAuthors.length; i++) {
+          if (mockAuthors[i].at_Active == true) {
+            listauthors.add(mockAuthors[i]);
+          }
+        }
+        notifyListeners();
+      } else {
+        //  await SendEmailException(response.body, ApiName);
+        // throw Exception();
+      }
+    } catch (e) {
+      print(e);
+      sendErrorEmail("$e", "getAuthors");
     }
   }
 
   //************* getAauthors   ************************* */
   getAuthorsbyCollections(String id) async {
-    late SharedPreferences sharedPreferences;
-    sharedPreferences = await SharedPreferences.getInstance();
-    String? authorized = sharedPreferences.getString("authorized");
-    if (authorized == null || authorized == "") {
-      authorized = DEFAULT_TOKEN;
-    }
+    try {
+      late SharedPreferences sharedPreferences;
+      sharedPreferences = await SharedPreferences.getInstance();
+      String? authorized = sharedPreferences.getString("authorized");
+      if (authorized == null || authorized == "") {
+        authorized = DEFAULT_TOKEN;
+      }
 
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      //'Accept': 'application/json',
-      // 'Content-Length': '$contentlength',
-      //'Host': '0',
-      'Authorization': 'Bearer $authorized'
-    };
-    final url = Uri.parse(
-      AppLink.authorsbycollection + "/$id",
-    );
-    final response = await http.get(
-      url,
-      headers: requestHeaders,
-    ); //,headers: requestHeaders,
+      Map<String, String> requestHeaders = {
+        'Content-type': 'application/json',
+        //'Accept': 'application/json',
+        // 'Content-Length': '$contentlength',
+        //'Host': '0',
+        'Authorization': 'Bearer $authorized'
+      };
+      final url = Uri.parse(
+        AppLink.authorsbycollection + "/$id",
+      );
+      final response = await http.get(
+        url,
+        headers: requestHeaders,
+      ); //,headers: requestHeaders,
 
-    if (response.statusCode == 200) {
-      collectionListByauth = [];
-      collectionByAu = json.decode(response.body) as List;
-      var i = 0;
-      collectionByAu.forEach((element) {
-        Map? obj = element as Map;
-        String image = obj['md_ID'] as String;
-        collectionListByauth.add(Collections(
-          bc_ID: obj['bc_ID'] as String,
-          bc_Title: obj['bc_Title'] as String,
-          bc_Title_Ar: obj['bc_Title_Ar'] as String,
-          imagePath:
-              'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
-          bc_Active: obj['bc_Active'] as bool,
-          bc_Desc: obj['bc_Desc'] as String,
-          bc_Summaries: obj['bc_Summaries'] as int,
-        ));
-        i + 1;
-      });
-    } else {
-      //  await SendEmailException(response.body, ApiName);
-      // throw Exception();
+      if (response.statusCode == 200) {
+        collectionListByauth = [];
+        collectionByAu = json.decode(response.body) as List;
+        var i = 0;
+        collectionByAu.forEach((element) {
+          Map? obj = element as Map;
+          String image = obj['md_ID'] as String;
+          collectionListByauth.add(Collections(
+            bc_ID: obj['bc_ID'] as String,
+            bc_Title: obj['bc_Title'] as String,
+            bc_Title_Ar: obj['bc_Title_Ar'] as String,
+            imagePath:
+                'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+            bc_Active: obj['bc_Active'] as bool,
+            bc_Desc: obj['bc_Desc'] as String,
+            bc_Summaries: obj['bc_Summaries'] as int,
+          ));
+          i + 1;
+        });
+      } else {
+        //  await SendEmailException(response.body, ApiName);
+        // throw Exception();
+      }
+    } catch (e) {
+      print(e);
+      sendErrorEmail("$e", "getAuthorsbyCollections");
     }
   }
 
@@ -356,6 +372,7 @@ class BooksApi extends ChangeNotifier {
       }
     } else {
       print("response  ${response.body}");
+      sendErrorEmail("${response.body}", "SignupGoogleApple");
       // await SendEmailException(response.body, ApiName);
       Get.rawSnackbar(
           messageText: const Text('User Name or Email Exist!',
@@ -377,90 +394,99 @@ class BooksApi extends ChangeNotifier {
   //******************* Function Get Subscription  ******************//
 
   Future<void> GetSubscription() async {
-    late SharedPreferences sharedPreferences;
-    sharedPreferences = await SharedPreferences.getInstance();
-    String? authorized = sharedPreferences.getString("authorized");
-    if (authorized == null || authorized == "") {
-      authorized = DEFAULT_TOKEN;
-    }
+    try {
+      late SharedPreferences sharedPreferences;
+      sharedPreferences = await SharedPreferences.getInstance();
+      String? authorized = sharedPreferences.getString("authorized");
+      if (authorized == null || authorized == "") {
+        authorized = DEFAULT_TOKEN;
+      }
 
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      //'Accept': 'application/json',
-      // 'Content-Length': '$contentlength',
-      //'Host': '0',
-      'Authorization': 'Bearer $authorized'
-    };
-    final url = Uri.parse(
-      AppLink.getsubscritipn,
-    );
-    final response = await http.get(
-      url,
-      headers: requestHeaders,
-    ); //,headers: requestHeaders,
+      Map<String, String> requestHeaders = {
+        'Content-type': 'application/json',
+        //'Accept': 'application/json',
+        // 'Content-Length': '$contentlength',
+        //'Host': '0',
+        'Authorization': 'Bearer $authorized'
+      };
+      final url = Uri.parse(
+        AppLink.getsubscritipn,
+      );
+      final response = await http.get(
+        url,
+        headers: requestHeaders,
+      ); //,headers: requestHeaders,
 
-    if (response.statusCode == 200) {
-      final responsebody = json.decode(response.body) as List<dynamic>;
-      await mybox!.put('subscriptionplan', responsebody);
-      print("subscription result $responsebody");
-    } else {
-      // await SendEmailException(response.body, ApiName);
+      if (response.statusCode == 200) {
+        final responsebody = json.decode(response.body) as List<dynamic>;
+        await mybox!.put('subscriptionplan', responsebody);
+        print("subscription result $responsebody");
+      } else {
+        // await SendEmailException(response.body, ApiName);
+      }
+    } catch (e) {
+      print(e);
+      sendErrorEmail("$e", "GetSubscription");
     }
   }
   //******************* Function Get EjazCollection  ******************//
 
   Future<void> GetEjazCollection() async {
-    print("getAuthors");
-    late SharedPreferences sharedPreferences;
-    sharedPreferences = await SharedPreferences.getInstance();
-    String? authorized = sharedPreferences.getString("authorized");
-    if (authorized == null || authorized == "") {
-      authorized = DEFAULT_TOKEN;
-    }
-
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      //'Accept': 'application/json',
-      // 'Content-Length': '$contentlength',
-      //'Host': '0',
-      'Authorization': 'Bearer $authorized'
-    };
-    final url = Uri.parse(
-      AppLink.getejazcollection,
-    );
-    final response = await http.get(
-      url,
-      headers: requestHeaders,
-    ); //,headers: requestHeaders,
-
-    if (response.statusCode == 200) {
-      final responsebody = json.decode(response.body) as List<dynamic>;
-      await mybox!.put('getejazcollection', responsebody);
-      collectionList = [];
-      collection = json.decode(response.body) as List;
-      var i = 0;
-      collection.forEach((element) {
-        Map? obj = element as Map;
-        String image = obj['md_ID'] as String;
-        collectionList.add(Collections(
-          bc_ID: obj['bc_ID'] as String,
-          bc_Title: obj['bc_Title'] as String,
-          bc_Title_Ar: obj['bc_Title_Ar'] as String,
-          imagePath:
-              'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
-          bc_Active: obj['bc_Active'] as bool,
-          bc_Desc: obj['bc_Desc'] as String,
-          bc_Summaries: obj['bc_Summaries'] as int,
-        ));
-        i + 1;
-      });
-      for (var i = 0; i < collectionList.length; i++) {
-        if (collectionList[i].bc_Active != false)
-          collectionActive.add(collectionList[i]);
+    try {
+      late SharedPreferences sharedPreferences;
+      sharedPreferences = await SharedPreferences.getInstance();
+      String? authorized = sharedPreferences.getString("authorized");
+      if (authorized == null || authorized == "") {
+        authorized = DEFAULT_TOKEN;
       }
-      notifyListeners();
-    } else {
-      //  await SendEmailException(response.body, ApiName);
+
+      Map<String, String> requestHeaders = {
+        'Content-type': 'application/json',
+        //'Accept': 'application/json',
+        // 'Content-Length': '$contentlength',
+        //'Host': '0',
+        'Authorization': 'Bearer $authorized'
+      };
+      final url = Uri.parse(
+        AppLink.getejazcollection,
+      );
+      final response = await http.get(
+        url,
+        headers: requestHeaders,
+      ); //,headers: requestHeaders,
+
+      if (response.statusCode == 200) {
+        final responsebody = json.decode(response.body) as List<dynamic>;
+        await mybox!.put('getejazcollection', responsebody);
+        collectionList = [];
+        collection = json.decode(response.body) as List;
+        var i = 0;
+        collection.forEach((element) {
+          Map? obj = element as Map;
+          String image = obj['md_ID'] as String;
+          collectionList.add(Collections(
+            bc_ID: obj['bc_ID'] as String,
+            bc_Title: obj['bc_Title'] as String,
+            bc_Title_Ar: obj['bc_Title_Ar'] as String,
+            imagePath:
+                'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+            bc_Active: obj['bc_Active'] as bool,
+            bc_Desc: obj['bc_Desc'] as String,
+            bc_Summaries: obj['bc_Summaries'] as int,
+          ));
+          i + 1;
+        });
+        for (var i = 0; i < collectionList.length; i++) {
+          if (collectionList[i].bc_Active != false)
+            collectionActive.add(collectionList[i]);
+        }
+        notifyListeners();
+      } else {
+        //  await SendEmailException(response.body, ApiName);
+      }
+    } catch (e) {
+      print(e);
+      sendErrorEmail("$e", "GetEjazCollection");
     }
   }
 
