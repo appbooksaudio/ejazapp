@@ -11,17 +11,22 @@ import 'package:http/http.dart' as http;
 
 Future<void> checkForUpdate(BuildContext context) async {
   try {
+     // Ensure it runs only on Android
+    if (!Platform.isAndroid) {
+      print("Skipping update check (not Android)");
+      return;
+    }
     // Get the installed app version
     PackageInfo packageInfo = await PackageInfo.fromPlatform();
     String currentVersion = packageInfo.version; // Example: "1.0.0"
     String packageName = packageInfo.packageName; // Your app's package name
-
+    print("current version is ${currentVersion}");
     // Get latest version from Google Play Store or Apple App Store
     String latestVersion = Platform.isAndroid
         ? await getLatestVersionFromGooglePlay(packageName)
         : await getLatestVersionFromAppleStore(
             "6450498323"); //com.ejazapphbku.ejazapp Replace with your Apple App ID
-
+    print("latestVersion version is ${latestVersion}");
     // Compare versions
     if (_isNewVersionAvailable(currentVersion, latestVersion)) {
       // Get Provider values BEFORE calling the function
@@ -52,7 +57,7 @@ Future<String> getLatestVersionFromGooglePlay(String packageName) async {
 
 // Fetch latest version from Apple App Store
 Future<String> getLatestVersionFromAppleStore(String appId) async {
-  final url = "https://itunes.apple.com/lookup?id=$appId";
+  final url = 'https://itunes.apple.com/lookup?bundleId=$appId&timestamp=${DateTime.now().millisecondsSinceEpoch}';
   final response = await http.get(Uri.parse(url));
 
   if (response.statusCode == 200) {
@@ -65,18 +70,19 @@ Future<String> getLatestVersionFromAppleStore(String appId) async {
 }
 
 // Function to compare versions
-bool _isNewVersionAvailable(String current, String latest) {
-  List<int> currentParts = current.split('.').map(int.parse).toList();
-  List<int> latestParts = latest.split('.').map(int.parse).toList();
+ bool _isNewVersionAvailable(String currentVersion, String storeVersion) {
+  List<int> current = currentVersion.split('.').map(int.parse).toList();
+  List<int> store = storeVersion.split('.').map(int.parse).toList();
 
-  for (int i = 0; i < latestParts.length; i++) {
-    if (i >= currentParts.length || latestParts[i] > currentParts[i]) {
-      return true; // New version available
-    } else if (latestParts[i] < currentParts[i]) {
-      return false; // Current version is higher (unlikely)
-    }
+  int length = store.length > current.length ? store.length : current.length;
+  for (int i = 0; i < length; i++) {
+    int currentPart = (i < current.length) ? current[i] : 0;
+    int storePart = (i < store.length) ? store[i] : 0;
+
+    if (storePart > currentPart) return true;
+    if (storePart < currentPart) return false;
   }
-  return false; // Same version
+  return false;
 }
 
 void _showUpdateDialog(BuildContext context, LocaleProvider localprovider,

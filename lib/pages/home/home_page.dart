@@ -102,7 +102,7 @@ class _HomePageState extends State<HomePage>
       }
     });
     //Fetch data from server
-    WidgetsBinding.instance.addPostFrameCallback((_) {
+    WidgetsBinding.instance.addPostFrameCallback((_) async{
       _fetchData(); // Calls API AFTER the first frame is built
       checkForUpdate(context);
     });
@@ -133,6 +133,7 @@ class _HomePageState extends State<HomePage>
 
     try {
       // Step 2: Fetch  APIs concurrently
+      // for(int i=0;i<100;i++)booksApi.getBooks(context, lang);
       await Future.wait<void>([
         // Auto-fetch books
         booksApi.autoLoadBooks(context, lang),
@@ -526,8 +527,8 @@ class _HomePageState extends State<HomePage>
           Padding(
             padding: EdgeInsets.only(
                 top: numNotification != 0 ? 15 : 0,
-                left: numNotification != 0 ? 19 : 0,
-                right: numNotification != 0 ? 14 : 0),
+                left: numNotification != 0 ? 8 : 0,
+                right: numNotification != 0 ? 8 : 0),
             child: InkWell(
               onTap: () {
                 Get.toNamed(Routes.notification);
@@ -609,7 +610,7 @@ class _HomePageState extends State<HomePage>
               //  const SizedBox(height: 10),
               Padding(
                 padding: const EdgeInsets.only(
-                  left: Const.margin,
+                  left: 5,
                   right: Const.margin,
                 ),
                 child: Column(
@@ -693,7 +694,7 @@ class _HomePageState extends State<HomePage>
                             trailing: localprovider.localelang!.languageCode ==
                                     'en'
                                 ? Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
+                                    padding: const EdgeInsets.only(top: 8.0,right: 3),
                                     child: const Text(
                                       "View All",
                                       style: TextStyle(
@@ -701,12 +702,8 @@ class _HomePageState extends State<HomePage>
                                       ),
                                     ),
                                   )
-                                // const Icon(
-                                //     Feather.chevrons_right,
-                                //     color: ColorLight.primary,
-                                //   )
                                 : Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
+                                    padding: const EdgeInsets.only(top: 8.0,left: 3),
                                     child: const Text(
                                       "عرض الكل",
                                       style: TextStyle(
@@ -869,7 +866,7 @@ class _HomePageState extends State<HomePage>
                             trailing: localprovider.localelang!.languageCode ==
                                     'en'
                                 ? Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
+                                    padding: const EdgeInsets.only(top: 8.0,right: 3),
                                     child: const Text(
                                       "View All",
                                       style:
@@ -877,7 +874,7 @@ class _HomePageState extends State<HomePage>
                                     ),
                                   )
                                 : Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
+                                    padding: const EdgeInsets.only(top: 8.0,left: 3),
                                     child: const Text(
                                       "عرض الكل",
                                       style:
