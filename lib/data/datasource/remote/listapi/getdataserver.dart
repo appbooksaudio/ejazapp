@@ -12,9 +12,7 @@ import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/data/models/category.dart';
 import 'package:ejazapp/data/models/collections.dart';
 import 'package:ejazapp/helpers/colors.dart';
-import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/helpers/routes.dart';
-import 'package:ejazapp/widgets/popup_error_connection.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
@@ -23,6 +21,7 @@ import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server/gmail.dart';
+import 'package:path/path.dart';
 
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:uuid/uuid.dart';
@@ -33,49 +32,267 @@ class BooksApi extends ChangeNotifier {
   List collectionByAu = [];
   List<Authors> listauthors = [];
   List<Collections> collectionActive = [];
-  bool isLooding = true;
-  String DEFAULT_TOKEN =
-      "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImVqYXphcHA1OEBnbWFpbC5jb20iLCJuYW1laWQiOiI5NDllM2VkNy02YjBhLTQ3ZDItODNlOC00ZWU0MjA4OWQ4OGMiLCJlbWFpbCI6ImVqYXphcHA1OEBnbWFpbC5jb20iLCJuYmYiOjE3NDE3NTk1NTEsImV4cCI6MTc0NDM1MTU1MSwiaWF0IjoxNzQxNzU5NTUxfQ.cR0Yb5xYeoVxjRhO4W13MziuzWJ1vlbP6I3hgL5iZeuTiKfV50calIXVjoDQHw1S-5Zr28r5n85pBZtjaidEQQ";
+  bool isLooding = false;
+  String DEFAULT_TOKEN = AppLink.DEFAULT_TOKEN;
+  String Refresh_TOKEN = AppLink.Refresh_TOKEN;
   List<Book> books2 = [];
-  bool isLoadingMore = false;
-  bool hasMoreBooks = true;
-  bool isError = false;
   int currentPage = 1;
   final int pageSize = 100;
-  bool isDataLoaded = false; // Adjust based on API response limits
-  //******************* Function autoLoadBooks ******************//
-  Future<void> autoLoadBooks(BuildContext context, String lang) async {
-    // mockBookList=[];
-    while (hasMoreBooks) {
-      await getBooks(context, lang);
-    }
-  }
+  List<Book> LastDate = [];
+  List<Book> booksQuery = [];
+  List<Book> BooksByCollection = [];
+  List<Book> getbooksbypublishers = [];
+  List<Book> getbooksbyauthors = [];
+  int CountBooks = 0;
+  List<Book> ListBookbyId = [];
+  final displayName = mybox!.get('name');
+
 
 //******************* Function getbooks ******************//
-  Future<void> getBooks(BuildContext context, String lang) async {
-    if (isLoadingMore || !hasMoreBooks) return;
-
-    isLoadingMore = true;
-    // isLooding = false;
-    // notifyListeners();
+  Future<void> getBooksByCreationDate(
+    BuildContext context,
+  ) async {
     try {
       final SharedPreferences sharedPreferences =
           await SharedPreferences.getInstance();
       String? authorized =
-          sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+          await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
 
       Map<String, String> requestHeaders = {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
         'Content-type': 'application/json',
         "User-Agent": "Ejaz-App/1.0",
         "Connection": "keep-alive",
         'Authorization': 'Bearer $authorized',
       };
-
+      print("newAccessToken2 $authorized");
       final url = Uri.parse(
-          "${AppLink.getbook}PageSize=$pageSize&PageNumber=$currentPage&OrderBy=Title&OrderAs=DESC");
+          "${AppLink.getbook}PageSize=10&OrderBy=CreatedOn&OrderAs=DESC");
 
       final response = await http
           .get(url, headers: requestHeaders)
+          .timeout(Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        LastBooks = [];
+        List<dynamic> jsonData = json.decode(response.body);
+        List<Book> allBooks =
+            jsonData.map((data) => Book.fromJson(data)).toList();
+        // Update LastBooks with the last 10 created books
+        LastBooks.addAll(allBooks);
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        handleError(context, errorValue, "Getbooks");
+      }
+    } catch (e) {
+      handleError(context, e, "Getbooks");
+    } finally {
+      notifyListeners();
+    }
+  }
+
+  //******************** funtion handleError **************/
+
+  handleError(BuildContext context, Object e, String ApisName) async {
+    print("Error fetching books: $e");
+    //delays between API calls
+    // await Future.delayed(Duration(seconds: 3));
+    // showDialog(
+    //   barrierDismissible: false,
+    //   context: context,
+    //   builder: (context) => ErrorPopup(),
+    // );
+   // Get.toNamed(Routes.signin);
+    sendErrorEmail("$e", ApisName);
+  }
+  
+// Future<void> handleError({
+//   required BuildContext context,
+//   required Object error,
+//   required String apiName,
+//   required Future<void> Function() retryFunction,
+//   int retryDelaySeconds = 2,
+// }) async {
+//   print("Error in $apiName: $error");
+
+//   // Only retry for specific errors
+//   if (error.toString().contains("401") || error.toString().contains("Unauthorized")) {
+//     print("Retrying $apiName after $retryDelaySeconds seconds...");
+//     await Future.delayed(Duration(seconds: retryDelaySeconds));
+
+//     try {
+//       await retryFunction(); // Try again
+//       print("Retry successful for $apiName.");
+//       return; // exit if successful
+//     } catch (e) {
+//       print("Retry failed: $e");
+//     }
+//   }
+
+//   // Go to sign-in and send error
+//   Get.toNamed(Routes.signin);
+//   sendErrorEmail("$error", apiName);
+// }
+
+  //******************** funtion sortBooksByCreationDate **************/
+
+  List<Book> sortBooksByCreationDate(List<Book> books) {
+    books.sort((a, b) {
+      DateTime aDate = DateTime.parse(
+          a.bk_CreatedOn!); // Assuming 'createdOn' is a DateTime string
+      DateTime bDate = DateTime.parse(b.bk_CreatedOn!);
+      return bDate.compareTo(aDate); // Sort in descending order
+    });
+    return books;
+  }
+
+  //******************** funtion getBooksCount **************/
+  getBooksCount() async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =
+        await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+
+    final Uri apiUrl =
+        Uri.parse('https://ejaz.applab.qa/api/ejaz/v1/Counts/getBooksCount');
+
+    try {
+      final response = await http
+          .get(apiUrl, headers: requestHeaders)
+          .timeout(Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        CountBooks = json.decode(response.body);
+        notifyListeners();
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "getBooksCount");
+      }
+    } catch (e) {
+      print('Exception: $e');
+    }
+  }
+
+  //******************** funtion PutBooksViews **************/
+  PutBooksViews(String id) async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =
+        await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+
+    final Uri apiUrl = Uri.parse('${AppLink.server}/Book/bookViews/$id');
+
+    try {
+      final response = await http
+          .put(apiUrl, headers: requestHeaders)
+          .timeout(Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        print('BooksView added');
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "BooksView");
+      }
+    } catch (e) {
+      print('Exception: $e');
+    }
+  }
+
+  //******************** funtion GetTrendBooks **************/
+  List<Book> trendBook = [];
+  GetTrendBooks() async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =
+        await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+
+    final Uri apiUrl = Uri.parse('${AppLink.server}/Book/gettrendingbooks');
+
+    try {
+      final response = await http
+          .get(apiUrl, headers: requestHeaders)
+          .timeout(Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        trendBook = [];
+        List<dynamic> jsonData = json.decode(response.body);
+        List<Book> newBooks =
+            jsonData.map((data) => Book.fromJson(data)).toList();
+        trendBook.addAll(newBooks);
+        notifyListeners();
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "GetTrendBooks");
+      }
+    } catch (e) {
+      print('Exception: $e');
+    }
+  }
+
+  //********************  Function searchBookQuery **************/
+  searchBookQuery(String query) async {
+    // Construct API URL to search by title and author
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =
+        await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+
+    final Uri apiUrl = Uri.parse(
+        'https://ejaz.applab.qa/api/ejaz/v1/Book/getBookBySearch/0?Search=$query');
+
+    try {
+      final response = await http
+          .get(apiUrl, headers: requestHeaders)
           .timeout(Duration(seconds: 60));
 
       if (response.statusCode == 200) {
@@ -83,52 +300,320 @@ class BooksApi extends ChangeNotifier {
         List<Book> newBooks =
             jsonData.map((data) => Book.fromJson(data)).toList();
 
-        books2.addAll(newBooks);
-        mockBookList.addAll(newBooks);
-        currentPage++;
-        hasMoreBooks = newBooks.length ==
-            pageSize; // If fewer books are returned, stop fetching
-        isError = false;
-        if (hasMoreBooks == false) isDataLoaded = false;
+        // Parse the books list from API response
+        booksQuery = newBooks.map((book) {
+          return Book(
+              bk_ID: book.bk_ID,
+              bk_Name: book.bk_Name,
+              bk_Name_Ar: book.bk_Name_Ar,
+              bk_Title: book.bk_Title,
+              bk_Title_Ar: book.bk_Title_Ar,
+              authors: book.authors,
+              categories: book.categories,
+              genres: book.genres,
+              publishers: book.publishers,
+              thematicAreas: book.thematicAreas,
+              tags: book.tags,
+              imagePath: book.imagePath,
+              audioEn: book.audioEn,
+              audioAr: book.audioAr,
+              bk_trial: book.bk_trial,
+              url: book.url // Assuming authors are already a list
+              );
+        }).toList();
       } else {
-        handleError(context, response.body.toString(), lang);
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "searchBookQuery");
       }
     } catch (e) {
-      handleError(context, e, lang);
-    } finally {
-      if (isError == false) this.isLooding = false;
-      isLoadingMore = false;
-      notifyListeners();
+      print('Exception: $e');
     }
   }
 
-  void handleError(BuildContext context, Object e, String lang) async {
-    isError = true;
-    print("Error fetching books: $e");
-    hasMoreBooks = false; // Stop auto-fetching on error
-    isDataLoaded = false;
-    //delays between API calls
-    await Future.delayed(Duration(seconds: 3));
-    showDialog(
-      barrierDismissible: false,
-      context: context,
-      builder: (context) => ErrorPopup(),
+  //********************  Function searchBookQuery **************/
+  searchBookbyId(String id) async {
+    ListBookbyId = [];
+    // Construct API URL to search by title and author
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =
+        await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+
+    final Uri apiUrl =
+        Uri.parse('https://ejaz.applab.qa/api/ejaz/v1/Book/getBook/$id');
+
+    try {
+      final response = await http
+          .get(apiUrl, headers: requestHeaders)
+          .timeout(Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse =
+            json.decode(response.body); // Parse as Map
+        Book book = Book.fromJson(jsonResponse); // Convert to Book object
+        ListBookbyId.add(book); // Add to the list
+
+        notifyListeners();
+        // Parse the books list from API response
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "searchBookbyId");
+      }
+    } catch (e) {
+      print('Exception: $e');
+    }
+  }
+  //********************  Function searchBookbyIdList **************/
+
+  Future<Book?> searchBookbyIdList(String id) async {
+    // Construct API URL to search by title and author
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =
+        await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+
+    final Uri apiUrl =
+        Uri.parse('https://ejaz.applab.qa/api/ejaz/v1/Book/getBook/$id');
+
+    try {
+      final response = await http
+          .get(apiUrl, headers: requestHeaders)
+          .timeout(const Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        Map<String, dynamic> jsonResponse = json.decode(response.body);
+        Book book = Book.fromJson(jsonResponse);
+        return book; // ✅ Return the book directly
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "searchBookbyIdList");
+      }
+    } catch (e) {
+      print('Exception: $e');
+    }
+
+    return null; // In case of error
+  }
+
+  //******************* Function getbooks ******************//
+
+  getBooks() async {
+    print("getBooksgetBooksgetBooksgetBooksgetBooksgetBooks");
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =
+        await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+    final url = Uri.parse(
+      AppLink.getbook,
     );
-    sendErrorEmail("$e", "GetBooks");
+    try {
+      final response = await http.get(
+        url,
+        headers: requestHeaders,
+      ); //,headers: requestHeaders,
+
+      if (response.statusCode == 200) {
+        mockBookList = [];
+        List<dynamic> jsonData = json.decode(response.body);
+        List<Book> newBooks =
+            jsonData.map((data) => Book.fromJson(data)).toList();
+
+        mockBookList.addAll(newBooks);
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "getBooks");
+      }
+    } catch (e) {
+      print('Exception: $e');
+    }
+  }
+  //******************* Function getBooksBypublishers ******************//
+
+  getBooksBypublishers(String id) async {
+    getbooksbypublishers = [];
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =
+        await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+    final url = Uri.parse(
+      "${AppLink.getbooksbypublishers}/$id/?Status=active",
+    );
+    try {
+      final response = await http.get(
+        url,
+        headers: requestHeaders,
+      ); //,headers: requestHeaders,
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = json.decode(response.body);
+        List<Book> newBooks =
+            jsonData.map((data) => Book.fromJson(data)).toList();
+
+        getbooksbypublishers.addAll(newBooks);
+        notifyListeners();
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "getBooksBypublishers");
+      }
+    } catch (e) {
+      print('Exception: $e');
+    }
+  }
+  //******************* Function getBooksByAuthors ******************//
+
+  getBooksByAuthors(String id) async {
+    getbooksbyauthors = [];
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =
+        await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+    final url = Uri.parse(
+      "${AppLink.getbooksbyauthors}/$id/?Status=active",
+    );
+    try {
+      final response = await http.get(
+        url,
+        headers: requestHeaders,
+      ); //,headers: requestHeaders,
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = json.decode(response.body);
+        List<Book> newBooks =
+            jsonData.map((data) => Book.fromJson(data)).toList();
+
+        getbooksbyauthors.addAll(newBooks);
+        notifyListeners();
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "getbooksbyauthors");
+      }
+    } catch (e) {
+      print('Exception: $e');
+    }
   }
 
 //******************* Function getCategory ******************//
 
-  getCategory() async {
-    print("getAuthors");
+//New APIs selfdevelopement  ////////
+  List<Book> selfBook = [];
+  Future<void> fetchBooksSelfdevelopement() async {
+    final Uri url = Uri.parse(
+        "${AppLink.server}/Book/getBookByCategory/ced2cdcf-2af1-466b-5c29-08db6f7c5ea5/?Status=active&PageSize=10&PageNumber=1&OrderBy=Title&OrderAs=DESC");
 
+    try {
+      final SharedPreferences sharedPreferences =
+          await SharedPreferences.getInstance();
+      String? authorized =
+          await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
+      Map<String, String> requestHeaders = {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Content-type': 'application/json',
+        "User-Agent": "Ejaz-App/1.0",
+        "Connection": "keep-alive",
+        'Authorization': 'Bearer $authorized',
+      };
+
+      final response = await http
+          .get(url, headers: requestHeaders)
+          .timeout(Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        var data = jsonDecode(response.body);
+        List<dynamic> jsonData = json.decode(response.body);
+        List<Book> newBooks =
+            jsonData.map((data) => Book.fromJson(data)).toList();
+
+        selfBook.addAll(newBooks);
+        notifyListeners();
+        print("Books: $data");
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "Selfdevelopement");
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
+  }
+
+//******************* Function getCategory ******************//
+  getCategory() async {
     try {
       late SharedPreferences sharedPreferences;
       sharedPreferences = await SharedPreferences.getInstance();
-      String? authorized = sharedPreferences.getString("authorized");
-      if (authorized == null || authorized == "") {
-        authorized = DEFAULT_TOKEN;
-      }
+      String? authorized =
+          await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
 
       Map<String, String> requestHeaders = {
         'Content-type': 'application/json',
@@ -166,7 +651,13 @@ class BooksApi extends ChangeNotifier {
           i + 1;
         });
       } else {
-        sendErrorEmail("${response.body}", "getCategory");
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "getCategory");
       }
     } catch (e) {
       print(e);
@@ -178,10 +669,8 @@ class BooksApi extends ChangeNotifier {
     try {
       late SharedPreferences sharedPreferences;
       sharedPreferences = await SharedPreferences.getInstance();
-      String? authorized = sharedPreferences.getString("authorized");
-      if (authorized == null || authorized == "") {
-        authorized = DEFAULT_TOKEN;
-      }
+      String? authorized =
+          await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
 
       Map<String, String> requestHeaders = {
         'Content-type': 'application/json',
@@ -226,7 +715,13 @@ class BooksApi extends ChangeNotifier {
         }
         notifyListeners();
       } else {
-        sendErrorEmail("${response.body}", "getAuthors");
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "getAuthors");
       }
     } catch (e) {
       print(e);
@@ -238,10 +733,8 @@ class BooksApi extends ChangeNotifier {
     try {
       late SharedPreferences sharedPreferences;
       sharedPreferences = await SharedPreferences.getInstance();
-      String? authorized = sharedPreferences.getString("authorized");
-      if (authorized == null || authorized == "") {
-        authorized = DEFAULT_TOKEN;
-      }
+      String? authorized =
+          await sharedPreferences.getString("authorized") ?? DEFAULT_TOKEN;
 
       Map<String, String> requestHeaders = {
         'Content-type': 'application/json',
@@ -278,126 +771,16 @@ class BooksApi extends ChangeNotifier {
           i + 1;
         });
       } else {
-        sendErrorEmail("${response.body}", "getAuthorsbyCollections");
-      }
-    } catch (e) {
-      print(e);
-    }
-  }
-
-//******************* Function SignupGoogleApple  ******************//
-
-  SignupGoogleApple(
-      String username, String? email, String? FirebaseUID, String type) async {
-    try {
-      var uid = Uuid().v4();
-      // ignore: omit_local_variable_types
-      Map<String, String> data = {
-        "FirebaseUID": FirebaseUID!,
-        "FirebaseToken": "dfgdfg",
-        "DisplayName": type == 'google' ? username : email as String,
-        "Username": type == 'google'
-            ? username + "@" + uid.split('-')[0]
-            : email as String,
-        "Password": 'GoogleApple@12345',
-        "Email": email!,
-        "PhoneNumber": FirebaseUID,
-        "Language": "All",
-      };
-      // ignore: prefer_final_locals
-      int contentlength = utf8.encode(json.encode(data)).length;
-
-      // ignore: omit_local_variable_types
-      Map<String, String> requestHeaders = {
-        'Content-type': 'application/json',
-        //'Accept': 'application/json',
-        'Content-Length': '$contentlength',
-        //'Host': '0',
-        // 'Authorization': 'Bearer $authorized'
-      };
-      final msg = jsonEncode(data);
-      final url = Uri.parse(
-        AppLink.signup,
-      );
-      final response = await http.post(url,
-          headers: requestHeaders, body: msg); //,headers: requestHeaders,
-
-      if (response.statusCode == 200) {
-        SharedPreferences sharedPreferences =
-            await SharedPreferences.getInstance();
-        final responsebody = json.decode(response.body) as Map<String, dynamic>;
-        await mybox!.put('islogin', true);
-        if (responsebody['isSubscribed'] == true) {
-          mybox!.put('PaymentStatus', 'success');
-          await sharedPreferences.setString(
-              'name', responsebody['displayName'] as String);
-          await sharedPreferences.setString(
-              "authorized", responsebody['token'] as String);
-          await sharedPreferences.setString(
-              "image", responsebody['image'] as String);
-          /********************Start Firebase generate token *********************/
-          await FirebaseMessaging.instance.getToken().then((value) {
-            print(value);
-            String? token = value;
-            sharedPreferences.setString('token', token!);
-            UpdateFirebaseToken(token);
-          });
-
-          /********************End Firebase generate token *********************/
-
-          await Get.offAllNamed(Routes.home, arguments: "");
-        } else if (responsebody['isSubscribed'] == false) {
-          mybox!.put('PaymentStatus', 'pending');
-
-          await sharedPreferences.setString(
-              'name', responsebody['displayName'] as String);
-          await sharedPreferences.setString(
-              "authorized", responsebody['token'] as String);
-          await sharedPreferences.setString(
-              "image", responsebody['image'] as String);
-          /********************Start Firebase generate token *********************/
-          await FirebaseMessaging.instance.getToken().then((value) {
-            print(value);
-            String? token = value;
-            sharedPreferences.setString('token', token!);
-            UpdateFirebaseToken(token);
-          });
-
-          /********************End Firebase generate token *********************/
-
-          await Get.offAllNamed(Routes.home, arguments: "");
-        }
-      } else {
-        print("response  ${response.body}");
-        sendErrorEmail("${response.body}", "SignupGoogleApple");
-        Get.rawSnackbar(
-          messageText: Text(
-            Get.locale?.languageCode == 'ar'
-                ? 'اسم المستخدم أو البريد الإلكتروني موجود!'
-                : 'User Name or Email Exist!',
-            textAlign: TextAlign.center,
-            style: const TextStyle(color: Colors.white, fontSize: 14),
-          ),
-          isDismissible: false,
-          duration: const Duration(seconds: 1),
-          backgroundColor: ColorLight.primary,
-          icon: const Icon(
-            Icons.sentiment_very_dissatisfied,
-            color: Colors.white,
-            size: 35,
-          ),
-          margin: EdgeInsets.zero,
-          snackStyle: SnackStyle.GROUNDED,
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
         );
-
-// Close it after 1 second
-        Future.delayed(Duration(seconds: 2), () {
-          Get.closeCurrentSnackbar();
-        });
+        sendErrorEmail(errorValue, "getAuthorsbyCollections");
       }
     } catch (e) {
       print(e);
-      sendErrorEmail("$e", "SignupGoogleApple");
     }
   }
 
@@ -433,6 +816,13 @@ class BooksApi extends ChangeNotifier {
         print("subscription result $responsebody");
       } else {
         // await SendEmailException(response.body, ApiName);
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "GetSubscription");
       }
     } catch (e) {
       print(e);
@@ -469,6 +859,7 @@ class BooksApi extends ChangeNotifier {
         final responsebody = json.decode(response.body) as List<dynamic>;
         await mybox!.put('getejazcollection', responsebody);
         collectionList = [];
+        collectionActive = [];
         collection = json.decode(response.body) as List;
         var i = 0;
         collection.forEach((element) {
@@ -492,7 +883,13 @@ class BooksApi extends ChangeNotifier {
         }
         notifyListeners();
       } else {
-        //  await SendEmailException(response.body, ApiName);
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: requestHeaders,
+          uri: url,
+          responseBody: response.body,
+        );
+        sendErrorEmail(errorValue, "GetEjazCollection");
       }
     } catch (e) {
       print(e);
@@ -500,8 +897,9 @@ class BooksApi extends ChangeNotifier {
     }
   }
 
-  //******************* Function Get EjazCollectionById  ******************//
-  Future<void> GetEjazCollectionById(String id) async {
+  //******************* Function Get GetBooksByCollection  ******************//
+  Future<void> GetBooksByCollectionId(String id) async {
+    BooksByCollection = [];
     try {
       // Retrieve authorization token from SharedPreferences
       final sharedPreferences = await SharedPreferences.getInstance();
@@ -516,45 +914,17 @@ class BooksApi extends ChangeNotifier {
 
       // Construct API URL
       final Uri url = Uri.parse(
-          'https://ejaz.applab.qa/api/ejaz/v1/BookCollection/getBookCollection/$id');
-
-      // Navigate to the collection screen before fetching data
-      final List<Book> collectionListById = []; // Initialize collection list
+          'https://ejaz.applab.qa/api/ejaz/v1/Book/getBookByCollection/$id/?Status=active');
 
       // Perform API request after navigation
       final response = await http.get(url, headers: requestHeaders);
 
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseCollection =
-            json.decode(response.body);
-
-        // Extract image ID
-        final String image = responseCollection['md_ID'] as String;
-
-        // Parse books list efficiently using `.map()`
-        collectionListById.addAll(
-          (responseCollection['books'] as List).map((book) {
-            return Book(
-              bk_ID: book['bk_ID'] as String,
-              bk_Name: responseCollection['bc_Title'] as String,
-              bk_Name_Ar: responseCollection['bc_Title_Ar'] as String,
-              imagePath:
-                  'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
-              audioAr: '',
-              audioEn: '',
-              authors: [],
-              categories: [],
-              genres: [],
-              publishers: [],
-              tags: [],
-              thematicAreas: [],
-            );
-          }).toList(),
-        );
-
-        // Navigate to the collection screen after fetching data
-        await Get.toNamed<dynamic>(Routes.collection,
-            arguments: collectionListById);
+        List<dynamic> jsonData = json.decode(response.body);
+        List<Book> newBooks =
+            jsonData.map((data) => Book.fromJson(data)).toList();
+        BooksByCollection.addAll(newBooks);
+        notifyListeners();
       } else {
         debugPrint("API Error: ${response.statusCode} - ${response.body}");
         throw Exception(
@@ -616,50 +986,57 @@ class BooksApi extends ChangeNotifier {
     }
   }
 
-  //******************* Function Get Checklogin  ******************//
+  //******************* Function  isUserExist  ******************//
 // ignore_for_file: prefer_const_constructors
-  CheckLogin(type, value, uid, displayName) async {
-    print("type, value, uid, displayName $type, $value, $uid, $displayName");
+  isUserExist(BuildContext context, String type, var value, String uid,
+      String displayName) async {
+    try {
+      print("type: $type, value: $value, uid: $uid, displayName: $displayName");
 
-    Map<String, String> data = {
-      "email": type == 'google' ? value as String : "",
-      "phoneNumber": type == 'phoneNumber' ? value as String : "",
-      "username": type == 'apple' ? value as String : "",
-    };
-    int contentlength = utf8.encode(json.encode(data)).length;
+      // Prepare data based on login type
+      Map<String, String> data = {
+        "email": type == 'google' ? value : "",
+        "phoneNumber": type == 'phoneNumber' ? value : "",
+        "username": type == 'apple' ? value : "",
+      };
 
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      //'Accept': 'application/json',
-      'Content-Length': '$contentlength',
-      //'Host': '0',
-      // 'Authorization': 'Bearer $authorized'
-    };
-    final msg = jsonEncode(data);
-    final url = Uri.parse(
-      AppLink.checklogin,
-    );
-    final response = await http.post(
-      url,
-      headers: requestHeaders,
-      body: msg,
-    ); //,headers: requestHeaders,
+      // Calculate the content length
+      int contentLength = utf8.encode(json.encode(data)).length;
 
-    if (response.statusCode == 200) {
-      print("checklogin ${response.body},Email $value,type $type , msg ${msg}");
-      if (response.body != "true") {
-        await SignupGoogleApple(displayName as String, value as String,
-            uid as String, type as String);
+      // Set up request headers
+      Map<String, String> requestHeaders = {
+        'Content-type': 'application/json',
+        'Content-Length': '$contentLength',
+      };
+
+      // Prepare request body
+      final msg = jsonEncode(data);
+      final url = Uri.parse(AppLink.checklogin);
+
+      // Send POST request
+      final response = await http.post(url, headers: requestHeaders, body: msg);
+
+      if (response.statusCode == 200) {
+        print("Checklogin Response: ${response.body}");
+
+        // Handle response logic
+        if (response.body != "true") {
+          await signupGoogleApple(context, displayName, value, uid, type);
+        } else {
+          await signGoogleApple(context, value, type);
+        }
       } else {
-        await SignGoogleApple(value as String, type as String);
-      }
-    } else {
-      //String ApiName = "checklogin";
-      //  await SendEmailException(response.body, ApiName);
-      Get.rawSnackbar(
-          messageText: const Text('Failed to connect !',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 14)),
+        // Handle if user is null (in case of an error)
+        Navigator.pop(context);
+        // Show error message if the request fails
+        Get.rawSnackbar(
+          messageText: Text(
+            Get.locale?.languageCode == 'ar'
+                ? 'فشل الاتصال. يرجى المحاولة مرة أخرى.'
+                : 'Unable to connect. Please try again.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Colors.white, fontSize: 14),
+          ),
           isDismissible: false,
           duration: const Duration(days: 1),
           backgroundColor: ColorLight.primary,
@@ -669,86 +1046,229 @@ class BooksApi extends ChangeNotifier {
             size: 35,
           ),
           margin: EdgeInsets.zero,
-          snackStyle: SnackStyle.GROUNDED);
-      // throw Exception();
+          snackStyle: SnackStyle.GROUNDED,
+        );
+
+// Optionally close the snackbar after a few seconds
+        Future.delayed(const Duration(seconds: 3), () {
+          Get.closeCurrentSnackbar(); // Close the snackbar after 3 seconds
+        });
+        sendErrorEmail(response.body.toString(), "isUserExist");
+      }
+    } catch (e) {
+      // Handle if user is null (in case of an error)
+      Navigator.pop(context);
+      print("Error during CheckLogin: $e");
+      sendErrorEmail(e.toString(), "isUserExist");
+      // Optional: Handle or log the error properly
     }
   }
 
-//******************* Function SignupGoogleApple  ******************//
+//******************* Function signGoogleApple  ******************//
 
-  SignGoogleApple(String email, String type) async {
-    // ignore: omit_local_variable_types
-    Map<String, String> data = {
-      "Password": 'GoogleApple@12345',
-      "Email": email,
-    };
-    // ignore: prefer_final_locals
-    int contentlength = utf8.encode(json.encode(data)).length;
+  Future<void> signGoogleApple(
+      BuildContext context, String email, String type) async {
+    try {
+      final data = {
+        "Password": 'GoogleApple@12345',
+        "Email": email,
+      };
 
-    // ignore: omit_local_variable_types
-    Map<String, String> requestHeaders = {
-      'Content-type': 'application/json',
-      //'Accept': 'application/json',
-      'Content-Length': '$contentlength',
-      //'Host': '0',
-      // 'Authorization': 'Bearer $authorized'
-    };
-    final msg = jsonEncode(data);
-    final url = Uri.parse(
-      AppLink.login,
+      final headers = {
+        'Content-Type': 'application/json',
+        'Content-Length': utf8.encode(json.encode(data)).length.toString(),
+      };
+
+      final response = await http.post(
+        Uri.parse(AppLink.login),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('تسجيل الدخول ناجح / Login successful');
+        final responseBody = json.decode(response.body) as Map<String, dynamic>;
+        final isSubscribed = responseBody['isSubscribed'] == true;
+        final sharedPreferences = await SharedPreferences.getInstance();
+
+        await sharedPreferences.setString('name', responseBody['displayName']);
+        await sharedPreferences.setString('authorized', responseBody['token']);
+        await sharedPreferences.setString(
+            'refreshToken', responseBody['refreshToken']);
+        await sharedPreferences.setString('image', responseBody['image']);
+        await mybox?.put('PaymentStatus', isSubscribed ? 'success' : 'pending');
+        tokenExpiryTime = DateTime.now()
+            .add(Duration(days: 1)); // Adjust based on API response
+        // Fetch Firebase token
+        final firebaseToken = await FirebaseMessaging.instance.getToken();
+        if (firebaseToken != null) {
+          await sharedPreferences.setString('token', firebaseToken);
+          UpdateFirebaseToken(firebaseToken);
+        }
+
+        Get.offNamed(Routes.home);
+      } else {
+        _showErrorSnackbar(Get.locale?.languageCode == 'ar'
+            ? "فشل تسجيل الدخول ... حاول مرة أخرى"
+            : "Login Failed ... try again");
+        // Handle if user is null (in case of an error)
+        Navigator.pop(context);
+        sendErrorEmail(response.body.toString(), "signGoogleApple");
+      }
+    } catch (e) {
+      // Handle if user is null (in case of an error)
+      Navigator.pop(context);
+      debugPrint("Error: $e");
+      _showErrorSnackbar(Get.locale?.languageCode == 'ar'
+          ? "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+          : "An unexpected error occurred. Please try again.");
+      sendErrorEmail(e.toString(), "signGoogleApple");
+    }
+  }
+  //******************* Function SignupGoogleApple  ******************//
+
+  Future<void> signupGoogleApple(BuildContext context, String username,
+      String email, String firebaseUID, String type) async {
+    try {
+      final uid = Uuid().v4();
+      final displayName = type == 'google' ? username : email;
+      final generatedUsername =
+          type == 'google' ? "$username@${uid.split('-')[0]}" : email;
+
+      final data = {
+        "FirebaseUID": firebaseUID,
+        "FirebaseToken": "dfgdfg", // This should be dynamically retrieved
+        "DisplayName": displayName,
+        "Username": generatedUsername,
+        "Password": 'GoogleApple@12345',
+        "Email": email,
+        "PhoneNumber": firebaseUID,
+        "Language": "All",
+      };
+
+      final headers = {
+        'Content-Type': 'application/json',
+        'Content-Length': utf8.encode(json.encode(data)).length.toString(),
+      };
+
+      final response = await http.post(Uri.parse(AppLink.signup),
+          headers: headers, body: jsonEncode(data));
+
+      if (response.statusCode == 200) {
+        final responseBody = json.decode(response.body) as Map<String, dynamic>;
+        final sharedPreferences = await SharedPreferences.getInstance();
+        final isSubscribed = responseBody['isSubscribed'] == true;
+
+        await sharedPreferences.setBool('isLogin', true);
+        await sharedPreferences.setString('name', responseBody['displayName']);
+        await sharedPreferences.setString('authorized', responseBody['token']);
+        await sharedPreferences.setString(
+            'refreshToken', responseBody['refreshToken']);
+        await sharedPreferences.setString('image', responseBody['image']);
+        await mybox?.put('PaymentStatus', isSubscribed ? 'success' : 'pending');
+        tokenExpiryTime = DateTime.now()
+            .add(Duration(days: 1)); // Adjust based on API response
+        // Fetch Firebase token
+        final firebaseToken = await FirebaseMessaging.instance.getToken();
+        if (firebaseToken != null) {
+          await sharedPreferences.setString('token', firebaseToken);
+          UpdateFirebaseToken(firebaseToken);
+        }
+
+        Get.offAllNamed(Routes.home);
+      } else {
+        _showErrorSnackbar("User Name or Email Exists!");
+        sendErrorEmail(response.body.toString(), "SignupGoogleApple");
+        // Handle if user is null (in case of an error)
+        Navigator.pop(context);
+      }
+    } catch (e) {
+      debugPrint("Error: $e");
+      sendErrorEmail(e.toString(), "SignupGoogleApple");
+      // Handle if user is null (in case of an error)
+      Navigator.pop(context);
+    }
+  }
+
+  void _showErrorSnackbar(String message) {
+    Get.rawSnackbar(
+      messageText: Text(
+        Get.locale?.languageCode == 'ar'
+            ? 'اسم المستخدم أو البريد الإلكتروني موجود!'
+            : message,
+        textAlign: TextAlign.center,
+        style: const TextStyle(color: Colors.white, fontSize: 14),
+      ),
+      isDismissible: false,
+      duration: const Duration(seconds: 2),
+      backgroundColor: Colors.red,
+      icon: const Icon(Icons.error, color: Colors.white, size: 35),
+      margin: EdgeInsets.zero,
+      snackStyle: SnackStyle.GROUNDED,
     );
-    final response = await http.post(url,
-        headers: requestHeaders, body: msg); //,headers: requestHeaders,
+    // Close the snackbar after 3 seconds (adjust time as needed)
+    Future.delayed(const Duration(seconds: 3), () {
+      Get.closeCurrentSnackbar(); // This will close the snackbar
+    });
+  }
 
-    if (response.statusCode == 200) {
-      print('Login successful');
-      SharedPreferences prefs = await SharedPreferences.getInstance();
-      final responsebody = json.decode(response.body) as Map<String, dynamic>;
-      if (responsebody['isSubscribed'] == true) {
-        await prefs.setString('name', responsebody['displayName'] as String);
-        await prefs.setString("authorized", responsebody['token'] as String);
-        await prefs.setString("image", responsebody['image'] as String);
+  //******************* Function SignupGoogleApple  ******************//
+  Future<void> signGuest(BuildContext context) async {
+    try {
+      final data = {
+        "Password": 'P@ssw0rd@123',
+        "Email": "guestejaz@gmail.com",
+      };
 
-        await FirebaseMessaging.instance.getToken().then((value) {
-          print(value);
-          String? token = value;
-          prefs.setString('token', token!);
-          UpdateFirebaseToken(token);
-        });
-        await mybox!.put('PaymentStatus', 'success');
+      final headers = {
+        'Content-Type': 'application/json',
+        'Content-Length': utf8.encode(json.encode(data)).length.toString(),
+      };
 
-        await Get.offNamed(Routes.home);
+      final response = await http.post(
+        Uri.parse(AppLink.login),
+        headers: headers,
+        body: jsonEncode(data),
+      );
+
+      if (response.statusCode == 200) {
+        debugPrint('تسجيل الدخول ناجح / Login successful');
+        final responseBody = json.decode(response.body) as Map<String, dynamic>;
+        final isSubscribed = responseBody['isSubscribed'] == true;
+        final sharedPreferences = await SharedPreferences.getInstance();
+
+        await sharedPreferences.setString('name', responseBody['displayName']);
+        await sharedPreferences.setString('authorized', responseBody['token']);
+        await sharedPreferences.setString(
+            'refreshToken', responseBody['refreshToken']);
+        await sharedPreferences.setString('image', responseBody['image']);
+        await mybox?.put('PaymentStatus', isSubscribed ? 'success' : 'pending');
+        tokenExpiryTime = DateTime.now()
+            .add(Duration(days: 1)); // Adjust based on API response
+        // Fetch Firebase token
+        final firebaseToken = await FirebaseMessaging.instance.getToken();
+        if (firebaseToken != null) {
+          await sharedPreferences.setString('token', firebaseToken);
+          await UpdateFirebaseToken(firebaseToken);
+        }
+
+        Get.offNamed(Routes.home);
+      } else {
+        _showErrorSnackbar(Get.locale?.languageCode == 'ar'
+            ? "فشل تسجيل الدخول ... حاول مرة أخرى"
+            : "Login Failed ... try again");
+        // Handle if user is null (in case of an error)
+        Navigator.pop(context);
+        sendErrorEmail(response.body.toString(), "signGuest");
       }
-      if (responsebody['isSubscribed'] == false) {
-        await prefs.setString('name', responsebody['displayName'] as String);
-        await prefs.setString("authorized", responsebody['token'] as String);
-        await prefs.setString("image", responsebody['image'] as String);
-
-        await FirebaseMessaging.instance.getToken().then((value) {
-          print(value);
-          String? token = value;
-          prefs.setString('token', token!);
-          UpdateFirebaseToken(token);
-        });
-        await mybox!.put('PaymentStatus', 'pending');
-
-        await Get.offNamed(Routes.home);
-      }
-    } else {
-      Get.rawSnackbar(
-          messageText: const Text('Login Failed ... try again',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Colors.white, fontSize: 14)),
-          isDismissible: false,
-          duration: const Duration(days: 1),
-          backgroundColor: ColorLight.primary,
-          icon: const Icon(
-            Icons.sentiment_very_dissatisfied,
-            color: Colors.white,
-            size: 35,
-          ),
-          margin: EdgeInsets.zero,
-          snackStyle: SnackStyle.GROUNDED);
+    } catch (e) {
+      // Handle if user is null (in case of an error)
+      Navigator.pop(context);
+      debugPrint("Error: $e");
+      _showErrorSnackbar(Get.locale?.languageCode == 'ar'
+          ? "حدث خطأ غير متوقع. يرجى المحاولة مرة أخرى."
+          : "An unexpected error occurred. Please try again.");
+      sendErrorEmail(e.toString(), "signGuest");
     }
   }
 
@@ -803,218 +1323,6 @@ class BooksApi extends ChangeNotifier {
       }
     } else {
       // throw Exception();
-    }
-  }
-
-  //******************* Function Post Payment Apple Google  ******************//
-  PaymentPostApple(final token, final payresult) async {
-    String encoded = base64.encode(utf8.encode(token));
-    final adress1 = payresult['billingContact']['postalAddress']['street'];
-    final locality = payresult['billingContact']['postalAddress']['locality'];
-    final countryCode =
-        payresult['billingContact']['postalAddress']['isoCountryCode'];
-    final postalCode =
-        payresult['billingContact']['postalAddress']['postalCode'];
-    final firstname = payresult['billingContact']['name']['givenName'];
-    final lastname = payresult['billingContact']['name']['familyName'];
-    final administrativeArea =
-        payresult['billingContact']['postalAddress']['administrativeArea'];
-    final clientReferenceInformation = payresult['transactionIdentifier'];
-    print(encoded);
-    Map<String, dynamic> data = {
-      "clientReferenceInformation": {"code": clientReferenceInformation},
-      "processingInformation": {"paymentSolution": "001"},
-      "paymentInformation": {
-        "fluidData": {
-          "value": "$encoded",
-          "descriptor": "RklEPUNPTU1PTi5BUFBMRS5JTkFQUC5QQVlNRU5U",
-          "encoding": "Base64",
-        },
-        "tokenizedCard": {"type": "002", "transactionType": "1"}
-      },
-      "orderInformation": {
-        "amountDetails": {"totalAmount": "7", "currency": "USD"},
-        "billTo": {
-          "firstName": firstname,
-          "lastName": lastname,
-          "address1": adress1,
-          "locality": locality,
-          "administrativeArea": administrativeArea,
-          "postalCode": postalCode,
-          "country": countryCode,
-          "email": "ejazapp@hbku.edu.qa"
-        }
-      }
-    };
-    int contentlength = utf8.encode(json.encode(data)).length;
-    final msg = jsonEncode(data);
-    String dateTran = Date();
-    String digest = generateDigest(msg);
-    var SignatureParm =
-        "host: apitest.cybersource.com v-c-date: $dateTran request-target digest: $digest v-c-merchant-id: hbkupress_1723456353";
-    String signature = generateSignatureFromParams(
-        SignatureParm, "ziE1E4LmkcMK2tnwM+q3GYsG4SvZakNfbvKF0oCBV2Q=");
-    Map<String, String> requestHeaders = {
-      // "authorization":"Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsInYtYy1tZXJjaGFudC1pZCI6InRlc3RyZXN0IiwieDVjIjpbIk1JSUNYekNDQWNpZ0F3SUJBZ0lXTnpFNE1UWXhOalV5TXpVeU1ERTNOekV3TnpBME56QU5CZ2txaGtpRzl3MEJBUXNGQURBZU1Sd3dHZ1lEVlFRRERCTkRlV0psY2xOdmRYSmpaVU5sY25SQmRYUm9NQjRYRFRJME1EWXhNakF6TURjek1sb1hEVEkyTURZeE1qQXpNRGN6TWxvd05ERVJNQThHQTFVRUF3d0lkR1Z6ZEhKbGMzUXhIekFkQmdOVkJBVVRGamN4T0RFMk1UWTFNak0xTWpBeE56Y3hNRGN3TkRjd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUNsNUtSazN4UDVNRnRyV3FDbFg1cFBLeElBSHU1SXowTGJZYjFVRTJhZnAvQ2xSU1RJaUdNa2oxNCt3NVBkTlF3NE5ndWliYkZYaWhBUW9uS0ozS1hrWjB1SkE0c24rdmpBS2w0a2RsUWxzNGYxL3prWU1TVkE4WXFJZ3R1bDFOVHArRWNnRDV2R1ZkTnVra0JTR0dIbjJjSEZ5U2ZIZE9nVE0yRFJnTW5vQU10cnI2MHlyRmJ0TE9xSk5EMWcyQ1hBNUltUFU3M2xlVWhRRW5FZTdIUkl5VHgwN3lyVDc1QkJFNWc1cE50d2RNRCtlMVM1bDFtSXRqV2t3MkNRMFRmWlFXcEtkK1ZzNzBWOGF2a24wd1hQYldJMFdsMGlPcktxMytoMkJVRUFPM1N6U1FHUUNsTHR2L3ZyNXBHdmNBWHNjMTBOYnc4Q0J3T1hwSVJWNVBacEFnTUJBQUV3RFFZSktvWklodmNOQVFFTEJRQURnWUVBWmRZcS9YWmRkVVUzU1pKdnFvOHRlQVovZkZoQXdQdDBudUNRRStpR0hVWGVDZjYvRmd3MlJpYTF4dmVaMWZyUGtvaGpmVHhuY21PNkthbC9MSnNkTUpuczZ0ZVh5WTNvdi81bldOMmsySGZhZzhMZXlNZE5QTUJJTzFGeENIUTRJdDE5QXdKdkVBMmo1TXBtWGkxSmlYMGlONElwKyt4NUYwSW9vQ1BRSjdBPSJdfQ==.eyJkaWdlc3QiOiIxd2s1SGxzMXFjYlp0allEbGRHeWwzQjJpOTJ2NHJPcVh5eDZ0d1Jib0VzPSIsImRpZ2VzdEFsZ29yaXRobSI6IlNIQS0yNTYiLCJpYXQiOiJTdW4sIDA4IFNlcCAyMDI0IDA2OjQyOjE5IEdNVCJ9.lfmp7iyzIK2JMRzBbutmreqoGgMpdMySNaGDtQ8SR7BsZZPjJW36j+mJVne/HD0KH3Q05O+YE08EyMSemc2/B5WYeKyFV0QiBAYTHw9uFfw/j65so0bJBdMqZd7qrCX5C6f3UKAtndX0E7FrxlFjjAPDMeJpLD+DsHmT8JzXeLMwujkJDCe9U2StH/DVN5m7k2rDeXgwyWxVMM+Jjhpd7OXjqwpa7bIoMfojNVpAbCA7Cf5ZBibgyVaFuhl/8wlJyW5re1jp8MqZrP2KmOBUix5FLlS4Tel5jityJHQ5GQjx0EP++tBSaHYbPopvWlaH8lywSV7l2xFv4QoahKcS/g==",
-
-      'host': 'apitest.cybersource.com',
-      "v-c-date": dateTran,
-      "digest": digest,
-      'v-c-merchant-id': 'hbkupress_1723456353',
-      // 'authorization': 'Bearer $encoded',
-      "signature":
-          'keyid="74b2fd80-779a-446a-a9a7-b2b55029cca4", algorithm="HmacSHA256", headers="host v-c-date request-target digest v-c-merchant-id", signature="$signature"',
-      "Content-Type": "application/json",
-      "Content-Length": "$contentlength",
-      "Accept-Encoding": "gzip",
-      "Access-Control-Allow-Origin": "*", // Required for CORS support to work
-      "Access-Control-Allow-Credentials":
-          'true', // Required for cookies, authorization headers with HTTPS
-      "Access-Control-Allow-Headers":
-          "Origin,Content-Type,X-Amz-Date,Authorization,X-Api-Key,X-Amz-Security-Token,locale",
-      "Access-Control-Allow-Methods": "POST, OPTIONS"
-    };
-    // final msg = jsonEncode(data);
-    Map<String, String> requestHeadersToken = {
-      "authorization":
-          "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsInYtYy1tZXJjaGFudC1pZCI6Imhia3VwcmVzc18xNzIzNDU2MzUzIiwieDVjIjpbIk1JSUNhekNDQWRTZ0F3SUJBZ0lXTnpJMU56Y3pOVEl4T0RVd01ERTNOekV3TnpBME56QU5CZ2txaGtpRzl3MEJBUXNGQURBZU1Sd3dHZ1lEVlFRRERCTkRlV0psY2xOdmRYSmpaVU5sY25SQmRYUm9NQjRYRFRJME1Ea3dPREExTXpJd01Wb1hEVEkyTURrd09EQTFNekl3TVZvd1FERWRNQnNHQTFVRUF3d1VhR0pyZFhCeVpYTnpYekUzTWpNME5UWXpOVE14SHpBZEJnTlZCQVVURmpjeU5UYzNNelV5TVRnMU1EQXhOemN4TURjd05EY3dnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFDOVJNcHFqcGtDL0VKSExuVHNROEhSNFZaV2VzMjJKL2hSV0RKU21TSnFQUUhVL0xCS1crclFMeWhkK29vZk83ejFPSVlBdHAvbXFTOFN0N2VOdFpDRnVPdHhrRVZSL1ZLT3QwT1pGU1puWWNBNEl2L21KSzFBdnJuL3ZKS2NRQlY2OGpsSDY2N2RpQi9iazFBYWdvcXZiWFJ1bFNXS1R4bkQ3SFA2YkNwQ0gvbXJ3ejVMUjNjaVYyMG1qSmMvQUxEMktKNVRuQmpRV3JTTG42d2NyZ3dhR2lVK1BTWk1ERE1DRkw3ZStKZlBTb0ZUVEpXSFd0QkRpY2JYVFFSazF2VEFzN3BGOVkyKzE2Y1R6b01oWWlUcVRQRmJGYkVwa0w2ZDBUSkZPWEJkMmk2eHlxYlI5MDFyN29lUW40R2NhaldnaWhEVEhLdUxXUGl1WTNscU1YcExBZ01CQUFFd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ1lFQXRWdHordDRMTDJER0ZGcHdCTmhwVUp2UzJjS3h4bngwVlFEWWluNFo3aGlwdFdNQXNLVVJzVVV2YVpPbGtoL1pnazd5YkJNQUxXdmhqZitDdGhsOHRXNSsyeFlzdGNpZG0zUURKQURHa0NmZEVwa2QwQWV6ZFo0Tk1yRTFxOSszak00ZlZ6T0sxSUw3OFBhZDQ4U01NTHRFYmlEam91MnFxZFNFRHRjWEZnaz0iXX0=.eyJkaWdlc3QiOiIxd2s1SGxzMXFjYlp0allEbGRHeWwzQjJpOTJ2NHJPcVh5eDZ0d1Jib0VzPSIsImRpZ2VzdEFsZ29yaXRobSI6IlNIQS0yNTYiLCJpYXQiOiJUdWUsIDEwIFNlcCAyMDI0IDExOjAzOjU0IEdNVCJ9.gmeRxKotNCttlIITz56mUTW/jZflwo+vBOTkAiioYBRxY7pFNGnWJY4qwQPZMoVKW2Ox8EhHHAASKBqMWmND9LRNqWmYsFMzTwCZvQrRjrhNl2lXooYKxn13xQknRi7exxhH+d1dHBjnJ7RDVQDKOo+34YRJpwlJU/hsqXgRFGRtJ3N2jwovSfY3muevjCGwH2xpTumTCeYu+UlIgJutzseRI+v2cO5KiVQZhawYGb4H9WIULbSKkj1raHwOdoHlWUfED466NZ1Jzz845miW/BIw98fZzMj5BlhbBNpd+IIvA10ICknFlW9ZjsO5p71jop+PPBQXFpjC06PXyFbBlA==",
-      "host": "apitest.cybersource.com",
-      "Content-Type": "application/json",
-      "Access-Control-Allow-Origin": "*", // Required for CORS support to work
-      "Access-Control-Allow-Credentials":
-          'true', // Required for cookies, authorization headers with HTTPS
-    };
-    final url = Uri.parse(
-      AppLink.PaymentAppleGooglleTest,
-    );
-    final response = await http.post(
-      url,
-      body: msg,
-      headers: requestHeadersToken, //requestHeaders,
-    ); //,headers: requestHeaders,
-    print('signature+++++++++++++++++$signature');
-    print('requestHeaders+++++++++++++++++$requestHeaders');
-    print('msg+++++++++++++++++$msg');
-    print('token+++++++++++++++++$token');
-    print(response.body);
-    print(response.statusCode);
-    if (response.statusCode == 201) {
-      print("payment success");
-      Get.toNamed(Routes.thankyou, arguments: ['success']);
-    } else {
-      print("payment Failed");
-      Get.toNamed(Routes.thankyou, arguments: ['failed']);
-    }
-  }
-
-//******************* Function Post Payment Apple Google  ******************//
-  PaymentPostGoogle(final token, final payresult) async {
-    String encoded = base64.encode(utf8.encode(token));
-    // final String adress1 =
-    //     payresult['paymentMethodData']['info']['billingAddress']['address1'];
-    // final String locality =
-    //     payresult['paymentMethodData']['info']['billingAddress']['locality'];
-    // final String countryCode =
-    //     payresult['paymentMethodData']['info']['billingAddress']['countryCode'];
-    // final String postalCode =
-    //     payresult['paymentMethodData']['info']['billingAddress']['postalCode'];
-    // final String name =
-    //     payresult['paymentMethodData']['info']['billingAddress']['name'];
-    // final String administrativeArea = payresult['paymentMethodData']['info']
-    //     ['billingAddress']['administrativeArea'];
-
-    print(encoded);
-    Map<String, dynamic> data = {
-      "clientReferenceInformation": {"code": "TC50171_3"},
-      "paymentInformation": {
-        "card": {
-          "number": "4111111111111111",
-          "expirationMonth": "12",
-          "expirationYear": "2031"
-        }
-      },
-      "orderInformation": {
-        "amountDetails": {"totalAmount": "102.21", "currency": "USD"},
-        "billTo": {
-          "firstName": "John",
-          "lastName": "Doe",
-          "address1": "1 Market St",
-          "locality": "san francisco",
-          "administrativeArea": "CA",
-          "postalCode": "94105",
-          "country": "US",
-          "email": "test@cybs.com",
-          "phoneNumber": "4158880000"
-        }
-      }
-
-      // "processingInformation": {"paymentSolution": "012"},
-      // "paymentInformation": {
-      //   "fluidData": {"value": "$encoded"}
-      // },
-      // "orderInformation": {
-      //   "amountDetails": {"totalAmount": "7", "currency": "USD"},
-      //   "billTo": {
-      //     "firstName": name != "" ? name.split(' ')[0] : "",
-      //     "lastName": name != "" ? name.split(' ')[1] : "",
-      //     "address1": adress1,
-      //     "locality": locality,
-      //     "administrativeArea": administrativeArea,
-      //     "postalCode": postalCode,
-      //     "country": countryCode,
-      //     "email": "ejazapp@hbku.edu.qa"
-      //   }
-      // }
-    };
-    int contentlength = utf8.encode(json.encode(data)).length;
-    final msg = jsonEncode(data);
-    String dateTran = Date();
-    String digest = await generateDigest(msg);
-    var SignatureParm =
-        "host: apitest.cybersource.com v-c-date: $dateTran request-target digest: $digest v-c-merchant-id: hbkupress_1723456353";
-    String signature = await generateSignatureFromParams(
-        SignatureParm, "ziE1E4LmkcMK2tnwM+q3GYsG4SvZakNfbvKF0oCBV2Q=");
-    // Map<String, String> requestHeaders = {
-    //   // "authorization":"Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsInYtYy1tZXJjaGFudC1pZCI6InRlc3RyZXN0IiwieDVjIjpbIk1JSUNYekNDQWNpZ0F3SUJBZ0lXTnpFNE1UWXhOalV5TXpVeU1ERTNOekV3TnpBME56QU5CZ2txaGtpRzl3MEJBUXNGQURBZU1Sd3dHZ1lEVlFRRERCTkRlV0psY2xOdmRYSmpaVU5sY25SQmRYUm9NQjRYRFRJME1EWXhNakF6TURjek1sb1hEVEkyTURZeE1qQXpNRGN6TWxvd05ERVJNQThHQTFVRUF3d0lkR1Z6ZEhKbGMzUXhIekFkQmdOVkJBVVRGamN4T0RFMk1UWTFNak0xTWpBeE56Y3hNRGN3TkRjd2dnRWlNQTBHQ1NxR1NJYjNEUUVCQVFVQUE0SUJEd0F3Z2dFS0FvSUJBUUNsNUtSazN4UDVNRnRyV3FDbFg1cFBLeElBSHU1SXowTGJZYjFVRTJhZnAvQ2xSU1RJaUdNa2oxNCt3NVBkTlF3NE5ndWliYkZYaWhBUW9uS0ozS1hrWjB1SkE0c24rdmpBS2w0a2RsUWxzNGYxL3prWU1TVkE4WXFJZ3R1bDFOVHArRWNnRDV2R1ZkTnVra0JTR0dIbjJjSEZ5U2ZIZE9nVE0yRFJnTW5vQU10cnI2MHlyRmJ0TE9xSk5EMWcyQ1hBNUltUFU3M2xlVWhRRW5FZTdIUkl5VHgwN3lyVDc1QkJFNWc1cE50d2RNRCtlMVM1bDFtSXRqV2t3MkNRMFRmWlFXcEtkK1ZzNzBWOGF2a24wd1hQYldJMFdsMGlPcktxMytoMkJVRUFPM1N6U1FHUUNsTHR2L3ZyNXBHdmNBWHNjMTBOYnc4Q0J3T1hwSVJWNVBacEFnTUJBQUV3RFFZSktvWklodmNOQVFFTEJRQURnWUVBWmRZcS9YWmRkVVUzU1pKdnFvOHRlQVovZkZoQXdQdDBudUNRRStpR0hVWGVDZjYvRmd3MlJpYTF4dmVaMWZyUGtvaGpmVHhuY21PNkthbC9MSnNkTUpuczZ0ZVh5WTNvdi81bldOMmsySGZhZzhMZXlNZE5QTUJJTzFGeENIUTRJdDE5QXdKdkVBMmo1TXBtWGkxSmlYMGlONElwKyt4NUYwSW9vQ1BRSjdBPSJdfQ==.eyJkaWdlc3QiOiIxd2s1SGxzMXFjYlp0allEbGRHeWwzQjJpOTJ2NHJPcVh5eDZ0d1Jib0VzPSIsImRpZ2VzdEFsZ29yaXRobSI6IlNIQS0yNTYiLCJpYXQiOiJTdW4sIDA4IFNlcCAyMDI0IDA2OjQyOjE5IEdNVCJ9.lfmp7iyzIK2JMRzBbutmreqoGgMpdMySNaGDtQ8SR7BsZZPjJW36j+mJVne/HD0KH3Q05O+YE08EyMSemc2/B5WYeKyFV0QiBAYTHw9uFfw/j65so0bJBdMqZd7qrCX5C6f3UKAtndX0E7FrxlFjjAPDMeJpLD+DsHmT8JzXeLMwujkJDCe9U2StH/DVN5m7k2rDeXgwyWxVMM+Jjhpd7OXjqwpa7bIoMfojNVpAbCA7Cf5ZBibgyVaFuhl/8wlJyW5re1jp8MqZrP2KmOBUix5FLlS4Tel5jityJHQ5GQjx0EP++tBSaHYbPopvWlaH8lywSV7l2xFv4QoahKcS/g==",
-
-    //   'host': 'apitest.cybersource.com',
-    //   "v-c-date": dateTran,
-    //   "digest": digest,
-    //   'v-c-merchant-id': 'hbkupress_1723456353',
-    //   // 'authorization': 'Bearer $encoded',
-    //   "signature":
-    //       'keyid="74b2fd80-779a-446a-a9a7-b2b55029cca4", algorithm="HmacSHA256", headers="host v-c-date request-target digest v-c-merchant-id", signature="$signature"',
-    //   "Content-Type": "application/json",
-    //   // "Content-Length": "$contentlength",
-    // };
-    Map<String, String> requestHeadersToken = {
-      "authorization":
-          "Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJSUzI1NiIsInYtYy1tZXJjaGFudC1pZCI6Imhia3VwcmVzc18xNzIzNDU2MzUzIiwieDVjIjpbIk1JSUNhekNDQWRTZ0F3SUJBZ0lXTnpJMU56Y3pOVEl4T0RVd01ERTNOekV3TnpBME56QU5CZ2txaGtpRzl3MEJBUXNGQURBZU1Sd3dHZ1lEVlFRRERCTkRlV0psY2xOdmRYSmpaVU5sY25SQmRYUm9NQjRYRFRJME1Ea3dPREExTXpJd01Wb1hEVEkyTURrd09EQTFNekl3TVZvd1FERWRNQnNHQTFVRUF3d1VhR0pyZFhCeVpYTnpYekUzTWpNME5UWXpOVE14SHpBZEJnTlZCQVVURmpjeU5UYzNNelV5TVRnMU1EQXhOemN4TURjd05EY3dnZ0VpTUEwR0NTcUdTSWIzRFFFQkFRVUFBNElCRHdBd2dnRUtBb0lCQVFDOVJNcHFqcGtDL0VKSExuVHNROEhSNFZaV2VzMjJKL2hSV0RKU21TSnFQUUhVL0xCS1crclFMeWhkK29vZk83ejFPSVlBdHAvbXFTOFN0N2VOdFpDRnVPdHhrRVZSL1ZLT3QwT1pGU1puWWNBNEl2L21KSzFBdnJuL3ZKS2NRQlY2OGpsSDY2N2RpQi9iazFBYWdvcXZiWFJ1bFNXS1R4bkQ3SFA2YkNwQ0gvbXJ3ejVMUjNjaVYyMG1qSmMvQUxEMktKNVRuQmpRV3JTTG42d2NyZ3dhR2lVK1BTWk1ERE1DRkw3ZStKZlBTb0ZUVEpXSFd0QkRpY2JYVFFSazF2VEFzN3BGOVkyKzE2Y1R6b01oWWlUcVRQRmJGYkVwa0w2ZDBUSkZPWEJkMmk2eHlxYlI5MDFyN29lUW40R2NhaldnaWhEVEhLdUxXUGl1WTNscU1YcExBZ01CQUFFd0RRWUpLb1pJaHZjTkFRRUxCUUFEZ1lFQXRWdHordDRMTDJER0ZGcHdCTmhwVUp2UzJjS3h4bngwVlFEWWluNFo3aGlwdFdNQXNLVVJzVVV2YVpPbGtoL1pnazd5YkJNQUxXdmhqZitDdGhsOHRXNSsyeFlzdGNpZG0zUURKQURHa0NmZEVwa2QwQWV6ZFo0Tk1yRTFxOSszak00ZlZ6T0sxSUw3OFBhZDQ4U01NTHRFYmlEam91MnFxZFNFRHRjWEZnaz0iXX0=.eyJkaWdlc3QiOiIxd2s1SGxzMXFjYlp0allEbGRHeWwzQjJpOTJ2NHJPcVh5eDZ0d1Jib0VzPSIsImRpZ2VzdEFsZ29yaXRobSI6IlNIQS0yNTYiLCJpYXQiOiJUdWUsIDEwIFNlcCAyMDI0IDExOjAzOjU0IEdNVCJ9.gmeRxKotNCttlIITz56mUTW/jZflwo+vBOTkAiioYBRxY7pFNGnWJY4qwQPZMoVKW2Ox8EhHHAASKBqMWmND9LRNqWmYsFMzTwCZvQrRjrhNl2lXooYKxn13xQknRi7exxhH+d1dHBjnJ7RDVQDKOo+34YRJpwlJU/hsqXgRFGRtJ3N2jwovSfY3muevjCGwH2xpTumTCeYu+UlIgJutzseRI+v2cO5KiVQZhawYGb4H9WIULbSKkj1raHwOdoHlWUfED466NZ1Jzz845miW/BIw98fZzMj5BlhbBNpd+IIvA10ICknFlW9ZjsO5p71jop+PPBQXFpjC06PXyFbBlA==",
-      "host": "apitest.cybersource.com",
-      "Content-Type": "application/x-www-form-urlencoded",
-      "Content-Length": "$contentlength",
-      "cache-control": "no-cache, no-store, must-revalidate"
-    };
-
-    // final msg = jsonEncode(data);
-    final url = Uri.parse(
-      AppLink.PaymentAppleGooglleTest,
-    );
-
-    print("header $requestHeadersToken");
-    final response = await http.post(
-      url,
-      body: msg,
-      headers:
-          requestHeadersToken, //base64.encode(utf8.encode('$requestHeadersToken')) , //requestHeaders,
-    ); //,headers: requestHeaders,
-    print('${response.body}  ${response.statusCode}');
-    if (response.statusCode == 201) {
-      print("payment success");
-      Get.toNamed(Routes.thankyou, arguments: ['success']);
-    } else {
-      print("payment Failed");
-      Get.toNamed(Routes.thankyou, arguments: ['failed']);
     }
   }
 
@@ -1090,6 +1398,74 @@ class BooksApi extends ChangeNotifier {
       // throw Exception();
     }
   }
+
+/********************Check if Token is Expired ***************/
+  DateTime? tokenExpiryTime;
+  bool isTokenExpired() {
+    if (tokenExpiryTime == null) return true;
+    return DateTime.now().isAfter(tokenExpiryTime!);
+  }
+
+  refreshToken(BuildContext context) async {
+    late SharedPreferences sharedPreferences;
+    sharedPreferences = await SharedPreferences.getInstance();
+    String? YOUR_REFRESH_TOKEN =
+        await sharedPreferences.getString("refreshToken");
+    if (YOUR_REFRESH_TOKEN == null || YOUR_REFRESH_TOKEN == "") {
+      YOUR_REFRESH_TOKEN = Refresh_TOKEN;
+    }
+    try {
+      final response = await http.post(
+        Uri.parse('https://ejaz.applab.qa/api/ejaz/v1/Account/refreshtoken'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'RefreshToken': YOUR_REFRESH_TOKEN}),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        String? newAccessToken = data['accessToken'];
+        String? newRefreshToken = data['refreshToken'];
+
+        if (newAccessToken != null && newRefreshToken != null) {
+          // Save new tokens
+          await sharedPreferences.setString("authorized", newAccessToken);
+          print("newAccessToken1 $newAccessToken");
+          await sharedPreferences.setString("refreshToken", newRefreshToken);
+          tokenExpiryTime = DateTime.now()
+              .add(Duration(days: 1)); // Adjust based on API response
+
+          print("✅ Token refreshed successfully!");
+          return;
+        } else {
+          Get.toNamed(Routes.signin);
+        }
+      } else {
+        String errorValue = await buildHtmlErrorEmail(
+          displayName: displayName,
+          requestHeaders: {
+            'Authorization': 'Bearer $YOUR_REFRESH_TOKEN',
+          },
+          uri: "Account/refreshtoken",
+          responseBody: response.body,
+        );
+        await handleError(context, errorValue, "refreshToken");
+      }
+    } catch (error) {
+      print("⚠️ Error refreshing token: $error");
+      String ErrorValue = "${YOUR_REFRESH_TOKEN},\n${error.toString()}";
+      await handleError(context, ErrorValue, "refreshToken");
+    }
+  }
+
+  Map<String, dynamic> decodeJwt(String token) {
+    final parts = token.split('.');
+    if (parts.length != 3) return {};
+    final payload =
+        utf8.decode(base64Url.decode(base64Url.normalize(parts[1])));
+    return json.decode(payload);
+  }
+
+/********************End Check if Token is Expired ***************/
 }
 
 //******************* Function Post Suggest book  ******************//
@@ -1251,6 +1627,44 @@ CloseRawSnakerbar() {
   }
 }
 
+//******************Start function buildHtmlErrorEmail  ***************/
+Future<String> buildHtmlErrorEmail({
+  required String displayName,
+  required Map<String, String> requestHeaders,
+  required dynamic uri,
+  required dynamic responseBody,
+}) async {
+  final String html = """
+ <html>
+    <body style="font-family: Arial, sans-serif; background-color: #f9f9f9; padding: 20px;">
+      <h2 style="color: #d9534f;">🚨 API Error Report</h2>
+
+      <p><strong>Message:</strong> An error occurred while processing the request.</p>
+      <p><strong>User Name:</strong> $displayName</p>
+      <p><strong>Time:</strong> ${DateTime.now()}</p>
+
+      <p><strong>Headers:</strong></p>
+      <pre style="background-color:#f1f1f1; padding: 10px; border-radius: 5px;">${requestHeaders.toString()}</pre>
+
+      <p><strong>APis Url:</strong></p>
+      <pre style="background-color:#f1f1f1; padding: 10px; border-radius: 5px;">${uri.toString()}</pre>
+
+      <p><strong>Response Body:</strong></p>
+      <pre style="background-color:#f1f1f1; padding: 10px; border-radius: 5px;">${responseBody.toString()}</pre>
+
+      <hr style="margin-top: 40px;" />
+      <p style="font-style: italic; color: #555;">Best regards,</p>
+      <p style="font-weight: bold; color: #333;">Hisni Walid</p>
+      <p style="font-weight: bold; color: #333;">Senior Mobile Developer</p>
+    </body>
+  </html>
+  """;
+
+  return html;
+}
+
+//******************Start function sendErrorEmail  ***************/
+
 Future<void> sendErrorEmail(String errorDetails, String apisName) async {
   String username = 'downloadejaz@gmail.com'; // Your email
   String password = 'davg vlft zzgi ujid'; // App Password (if using Gmail)
@@ -1259,9 +1673,9 @@ Future<void> sendErrorEmail(String errorDetails, String apisName) async {
 
   final message = Message()
     ..from = Address(username, 'Ejaz Books')
-    ..recipients.add('downloadejaz@gmail.com') // Admin email
-    ..subject = '⚠️ Exception Alert: APIs Name:$apisName ${DateTime.now()}'
-    ..text = 'An error occurred in the app:\n\n$errorDetails';
+    ..recipients.add('ejazalerexception@gmail.com') // Admin email
+    ..subject = '⚠️ Exception Alert: APIs Name: $apisName ${DateTime.now()}'
+    ..html = errorDetails; // This sends the content as HTML
 
   try {
     final sendReport = await send(message, smtpServer);

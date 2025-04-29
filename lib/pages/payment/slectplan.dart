@@ -43,7 +43,7 @@ class _SelectPlanState extends State<SelectPlan> {
     final token =
         paymentResult['paymentMethodData']['tokenizationData']['token'];
     print(token);
-    BooksApi().PaymentPostGoogle(token, paymentResult);
+   // BooksApi().PaymentPostGoogle(token, paymentResult);
     // Get.toNamed(Routes.thankyou);
   }
 
@@ -51,7 +51,7 @@ class _SelectPlanState extends State<SelectPlan> {
     print(paymentResult.toString());
     final token = paymentResult['token'];
     // final tokenJson = Map.castFrom(json.decode(token));
-    BooksApi().PaymentPostApple(token, paymentResult);
+ //   BooksApi().PaymentPostApple(token, paymentResult);
     // Get.toNamed(Routes.thankyou,arguments: ['success']);
   }
 

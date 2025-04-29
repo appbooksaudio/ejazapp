@@ -2,6 +2,7 @@ import 'dart:io' show Platform;
 
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ejazapp/core/services/services.dart';
+import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 import 'package:ejazapp/data/models/category.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/routes.dart';
@@ -33,6 +34,9 @@ class _SelectCategoryState extends State<SelectCategory> {
   void initState() {
     category = CategoryList;
     super.initState();
+      Future.delayed(Duration.zero, () async {
+  await Provider.of<BooksApi>(context, listen: false).getBooks();
+});
   }
 
   @override

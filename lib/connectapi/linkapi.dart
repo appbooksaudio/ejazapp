@@ -41,11 +41,19 @@ class AppLink {
   static const String banner = '$server/Banner/getBanners';
  //**************** Api link for Banner/getBanners ******************/
   static const String suggest = '$server/Book/suggestBook';
+  static const String getCategories = '$server/Category/getCategories/?PageSize=50&OrderBy=Title&OrderAs=DESC';
 //  static const String getbook =
   //   'https://gist.githubusercontent.com/JohannesMilke/d53fbbe9a1b7e7ca2645db13b995dc6f/raw/eace0e20f86cdde3352b2d92f699b6e9dedd8c70/books.json';
  //**************** Api link for PaymentAppleGoogle ******************/
  static const String PaymentAppleGooglleTest = 'https://apitest.cybersource.com/pts/v2/payments/';
  static const String PaymentAppleGooglleProduction = 'https://api.cybersource.com/pts/v2/payments/';
+ static const String getbooksbypublishers = '$server/Book/getBookByPublisher';
+  static const String getbooksbyauthors = '$server/Book/getBookByAuthor';
+  static const DEFAULT_TOKEN =
+      "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImVqYXphcHA1OEBnbWFpbC5jb20iLCJuYW1laWQiOiI5NDllM2VkNy02YjBhLTQ3ZDItODNlOC00ZWU0MjA4OWQ4OGMiLCJlbWFpbCI6ImVqYXphcHA1OEBnbWFpbC5jb20iLCJuYmYiOjE3NDE3NTk1NTEsImV4cCI6MTc0NDM1MTU1MSwiaWF0IjoxNzQxNzU5NTUxfQ.cR0Yb5xYeoVxjRhO4W13MziuzWJ1vlbP6I3hgL5iZeuTiKfV50calIXVjoDQHw1S-5Zr28r5n85pBZtjaidEQQ";
+  static const Refresh_TOKEN ="eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6IkVqYXpEZXZlbG9wZXJzaXVkIiwibmFtZWlkIjoiYzk2MWRhZDktNmQxOS00ZmE0LWFjNDktNDZlYTQ0NTEwZjg2IiwiZW1haWwiOiJlamF6LjAxLmRldmVsb3BlZnJ0eXRAZ21haWwuY29tIiwibmJmIjoxNzQyOTc2ODkxLCJleHAiOjE3NDU1Njg4OTEsImlhdCI6MTc0Mjk3Njg5MX0.xfyL2X7OxTjXRH-IpN09Yy3qv8UZUjOGSOEnQavH5Ja02bpYqW18kqDkEgInXYiE5qvcuppY7dGWwFRMsb_wYw";
+
+
 
 
 }

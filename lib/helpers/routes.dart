@@ -67,4 +67,8 @@ class Routes {
   static const String roomChat='/roomChat';
   static const String groupchat='/groupchat';
   static const String creategroup='/creategroup';
+  static const String fetchallbooks='/fetchallbooks';
+  static const String trendbooks='/trendbooks';
+
+  
 }

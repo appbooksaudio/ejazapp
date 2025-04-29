@@ -55,6 +55,7 @@ class SignUpControllerImp extends SignUpController {
         if (response['isSubscribed'] == true) {
           mybox!.put('PaymentStatus', 'success');
           myServices.prefs.setString("authorized", response['token'] as String);
+          myServices.prefs.setString('refreshToken', response['refreshToken']);
           //print(response);
           await BooksApi().getCategory();
           await CreateUser(email.text, password.text, username.text);
@@ -63,6 +64,7 @@ class SignUpControllerImp extends SignUpController {
         } else if (response['isSubscribed'] == false) {
           mybox!.put('PaymentStatus', 'pending');
           myServices.prefs.setString("authorized", response['token'] as String);
+          myServices.prefs.setString('refreshToken', response['refreshToken']);
           //print(response);
           await BooksApi().getCategory();
           await CreateUser(email.text, password.text, username.text);

@@ -1,6 +1,5 @@
 import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 import 'package:ejazapp/data/models/book.dart';
-import 'package:ejazapp/data/models/collections.dart';
 import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/widgets/book_card.dart';
 import 'package:ejazapp/widgets/placeholders.dart';

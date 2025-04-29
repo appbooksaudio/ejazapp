@@ -23,7 +23,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
   int _currentIndexPage = 0;
   PageController? _pageController;
   bool? isIpadR = false;
-  bool? firebaseValue = false;
+  bool? StringValue = false;
 
   List<OnBoardingModel> onBoardingList(BuildContext context) => [
         OnBoardingModel(
@@ -64,7 +64,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
         String AppDoneValue = (docData["AppDone"] as String);
         if (AppDoneValue != "false") {
           setState(() {
-            firebaseValue = true;
+            StringValue = true;
           });
           return false;
         }
@@ -122,7 +122,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
             child: Center(
               child: DotsIndicator(
                 dotsCount: onBoardingList(context).length,
-                position: _currentIndexPage,
+                position: _currentIndexPage.toDouble(),
                 decorator: DotsDecorator(
                   activeColor: Theme.of(context).primaryColor,
                   activeSize: const Size(18, 9),
@@ -133,7 +133,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
               ),
             ),
           ),
-          firebaseValue == false ? getStartedButton() : Container(),
+          StringValue == false ? getStartedButton() : Container(),
         ],
       ),
     );
@@ -193,6 +193,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                 child: Padding(
                   padding: const EdgeInsets.all(8.0),
                   child: Text(
+                    textAlign: TextAlign.center,
                     item.title!,
                     style: theme.textTheme.headlineLarge!.copyWith(
                       fontSize: 28,
@@ -208,6 +209,7 @@ class _OnBoardingPageState extends State<OnBoardingPage> {
                   padding: const EdgeInsets.all(8.0),
                   child: Center(
                     child: Text(
+                      textAlign: TextAlign.center,
                       item.subtitle!,
                       style: theme.textTheme.bodyLarge!.copyWith(
                           fontSize: 14,

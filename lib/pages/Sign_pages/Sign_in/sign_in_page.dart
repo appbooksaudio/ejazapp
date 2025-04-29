@@ -49,6 +49,8 @@ class SignInPage extends StatefulWidget {
 }
 
 class _SignInPageState extends State<SignInPage> {
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
   Future<UserCredential> signInWithGoogle() async {
     // Trigger the authentication flow
 
@@ -65,11 +67,6 @@ class _SignInPageState extends State<SignInPage> {
 
     // Once signed in, return the UserCredential
     return await FirebaseAuth.instance.signInWithCredential(credential);
-  }
-
-  signInWithApple1() async {
-    var appleProvider = AppleAuthProvider();
-    await FirebaseAuth.instance.signInWithProvider(appleProvider);
   }
 
   Future<UserCredential> signInWithApple() async {
@@ -147,23 +144,33 @@ class _SignInPageState extends State<SignInPage> {
           Expanded(
             child: OutlinedButton(
               onPressed: () async {
-                final cred = await signInWithGoogle();
-                print(cred);
-                final user = cred.user;
-                if (user != null) {
-                  // mybox!.put('islogin', true);
+                try {
+                  final cred = await signInWithGoogle();
+                  print(cred);
+                  final user = cred.user;
+                  if (user != null) {
+                    // Check if displayName is null
+                    final userName = user.displayName?.split(' ')[0] ??
+                        'Ejaz'; // Provide a fallback value if null
+                    // Save user data to local storage
+                    mybox!.put('name', userName);
 
-                  mybox!.put('name', cred.user!.displayName!.split(' ')[0]);
-                  await BooksApi().CheckLogin(
-                    'google',
-                    cred.user!.email,
-                    cred.user!.uid,
-                    cred.user!.displayName!.split(' ')[0],
-                  );
-                } else {
-                  Navigator.pop(context);
+                    // Call API to check login
+                    await BooksApi().isUserExist(
+                      context,
+                      'google',
+                      user.email,
+                      user.uid,
+                      userName,
+                    );
+                  } else {
+                    // Handle if user is null (in case of an error)
+                    Navigator.pop(context);
+                  }
+                } catch (e) {
+                  // Add error handling (optional)
+                  print('Error during Google sign-in: $e');
                 }
-                ;
               },
               style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.white,
@@ -217,9 +224,10 @@ class _SignInPageState extends State<SignInPage> {
                 print(credapple);
                 if (credapple.user != null) {
                   // ignore: avoid_dynamic_calls
-                  final displayname = credapple.user!.displayName != null
-                      ? credapple.user!.displayName!.split(' ')[0]
-                      : "Apple";
+                  final displayname =
+                      (credapple.user?.displayName?.trim().isNotEmpty ?? false)
+                          ? credapple.user!.displayName!.split(' ').first
+                          : "No Name";
 
                   final email = credapple.user!.email == null
                       ? credapple.user?.providerData
@@ -228,7 +236,9 @@ class _SignInPageState extends State<SignInPage> {
                           ?.email
                       : credapple.user!.email;
                   mybox!.put('name', displayname);
-                  await BooksApi().CheckLogin(
+                  print("displayname $displayname");
+                  await BooksApi().isUserExist(
+                    context,
                     'apple',
                     email,
                     credapple.user!.uid,
@@ -285,8 +295,10 @@ class _SignInPageState extends State<SignInPage> {
                 late SharedPreferences sharedPreferences;
                 sharedPreferences = await SharedPreferences.getInstance();
                 sharedPreferences.setString("token", 'tokenGuest');
+                // sharedPreferences.setString("authorized", '');
                 mybox!.put('name', "Guest");
-                Get.toNamed(Routes.home);
+                await BooksApi().signGuest(context);
+                // Get.toNamed(Routes.home);
               },
               style: OutlinedButton.styleFrom(
                 backgroundColor: Colors.transparent,

@@ -5,7 +5,6 @@ import 'package:ejazapp/pages/Sign_pages/Sign_in/sign_in_with_email_page.dart'; 
 import 'package:ejazapp/pages/book/book_details/view_publishers.dart';
 import 'package:ejazapp/pages/chat_pages/chat.dart';
 import 'package:ejazapp/pages/chat_pages/chat_list_screen.dart';
-import 'package:ejazapp/pages/chat_pages/chat_screen.dart';
 import 'package:ejazapp/pages/chat_pages/group_chat/create_group.dart';
 import 'package:ejazapp/pages/chat_pages/group_chat/group_chat.dart';
 import 'package:ejazapp/pages/image_screen/image_screen.dart';
@@ -13,10 +12,10 @@ import 'package:ejazapp/pages/profile/statistic.dart';
 import 'package:ejazapp/pages/home/stories/add_post.dart';
 import 'package:ejazapp/pages/home/authors/list_authors.dart';
 import 'package:ejazapp/pages/home/authors/profile_page.dart';
-import 'package:ejazapp/pages/playlist/play_audio_multi/audiobookitem.dart';
+import 'package:ejazapp/pages/book/play_audio_single/audiobookitem.dart';
 import 'package:ejazapp/pages/book/book_details/book_detail.dart';
 import 'package:ejazapp/pages/book/book_details/comment.dart';
-import 'package:ejazapp/pages/book/play_audio_single/player_list.dart';
+import 'package:ejazapp/pages/playlist/play_audio_multi/player_list.dart';
 import 'package:ejazapp/pages/book/book_details/takeway.dart';
 import 'package:ejazapp/pages/bottom_nav_page.dart';
 import 'package:ejazapp/pages/book_scanner/chat_ai.dart';
@@ -57,6 +56,8 @@ import 'package:ejazapp/pages/Sign_pages/sign_up/summaries_lang.dart';
 import 'package:ejazapp/pages/Sign_pages/sign_up/uploaded_avatar.dart';
 import 'package:ejazapp/pages/splash_page.dart';
 import 'package:ejazapp/pages/home/suggestion/suggest.dart';
+import 'package:ejazapp/pages/view_all/fetchallbooks.dart';
+import 'package:ejazapp/pages/view_all/trendbooks.dart';
 import 'package:get/get.dart';
 
 List<GetPage<dynamic>> allPages = [
@@ -156,12 +157,7 @@ List<GetPage<dynamic>> allPages = [
     name: Routes.chatList,
     page: () => ChatListScreen(),
   ),
-  GetPage(
-    name: Routes.chat,
-    page: () => ChatScreen(
-      user: Get.arguments['user'],
-    ),
-  ),
+
   GetPage(
     name: Routes.imageView,
     page: () => ImageScreen(),
@@ -178,4 +174,12 @@ List<GetPage<dynamic>> allPages = [
     name: Routes.creategroup,
     page: () => CreateGroupScreen(),
   )
+,GetPage(
+    name: Routes.fetchallbooks,
+    page: () => BooksListScreen(),
+  ),GetPage(
+    name: Routes.trendbooks,
+    page: () => ListTrendBooksViewAll(),
+  )
+  
 ];

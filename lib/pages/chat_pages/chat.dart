@@ -1,7 +1,6 @@
 import 'dart:io';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ejazapp/helpers/routes.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
@@ -33,14 +32,13 @@ class ChatPage extends StatefulWidget {
 class _ChatPageState extends State<ChatPage> {
   bool _isAttachmentUploading = false;
 
-@override
+  @override
   void initState() {
     // TODO: implement initState
-   // _user =Get.arguments[1];
+    // _user =Get.arguments[1];
     super.initState();
-    
+    markChatAsSeen();
   }
-
 
   void _handleAtachmentPressed() {
     showModalBottomSheet<void>(
@@ -86,34 +84,34 @@ class _ChatPageState extends State<ChatPage> {
   }
 
   void _handleFileSelection() async {
-    final result = await FilePicker.platform.pickFiles(
-      type: FileType.any,
-    );
+    // final result = await FilePicker.platform.pickFiles(
+    //   type: FileType.any,
+    // );
 
-    if (result != null && result.files.single.path != null) {
-      _setAttachmentUploading(true);
-      final name = result.files.single.name;
-      final filePath = result.files.single.path!;
-      final file = File(filePath);
+    // if (result != null && result.files.single.path != null) {
+    //   _setAttachmentUploading(true);
+    //   final name = result.files.single.name;
+    //   final filePath = result.files.single.path!;
+    //   final file = File(filePath);
 
-      try {
-        final reference = FirebaseStorage.instance.ref(name);
-        await reference.putFile(file);
-        final uri = await reference.getDownloadURL();
+    //   try {
+    //     final reference = FirebaseStorage.instance.ref(name);
+    //     await reference.putFile(file);
+    //     final uri = await reference.getDownloadURL();
 
-        final message = types.PartialFile(
-          mimeType: lookupMimeType(filePath),
-          name: name,
-          size: result.files.single.size,
-          uri: uri,
-        );
+    //     final message = types.PartialFile(
+    //       mimeType: lookupMimeType(filePath),
+    //       name: name,
+    //       size: result.files.single.size,
+    //       uri: uri,
+    //     );
 
-        FirebaseChatCore.instance.sendMessage(message, widget.room.id);
-        _setAttachmentUploading(false);
-      } finally {
-        _setAttachmentUploading(false);
-      }
-    }
+    //     FirebaseChatCore.instance.sendMessage(message, widget.room.id);
+    //     _setAttachmentUploading(false);
+    //   } finally {
+    //     _setAttachmentUploading(false);
+    //   }
+    // }
   }
 
   void _handleImageSelection() async {
@@ -199,19 +197,86 @@ class _ChatPageState extends State<ChatPage> {
     FirebaseChatCore.instance.updateMessage(updatedMessage, widget.room.id);
   }
 
-  void _handleSendPressed(types.PartialText message) async{
-   
+  void _handleSendPressed(types.PartialText message) async {
+    final senderId = FirebaseAuth.instance.currentUser?.uid;
+    final receiverId = widget.user!.uid;
+
+    final customMessage = types.PartialText(
+      text: message.text,
+      metadata: {
+        'isSeen': false,
+        'senderId': senderId,
+        'receiverId': receiverId,
+      },
+    );
+
     FirebaseChatCore.instance.sendMessage(
-      message,
+      customMessage,
       widget.room.id,
     );
 
- 
-  // ✅ Update lastMessage in the chat document
-  await FirebaseFirestore.instance.collection('chats').doc(widget.user!.uid).set({
-    'lastMessage': message.text,
-    'lastMessageTime': FieldValue.serverTimestamp(),
-  });
+    // Optional: Update 'lastMessage' in a central chat metadata collection
+    await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.room.id)
+        .set({
+      'lastMessage': message.text,
+      'lastMessageTime': FieldValue.serverTimestamp(),
+      'hasUnread': true, // or custom tracking per user if needed
+      'unreadBy': {
+        receiverId: true,
+      },
+    }, SetOptions(merge: true));
+  }
+
+//To update the lastSeenMessage when a user opens the chatroom
+  void markChatAsSeen() async {
+    final currentUserId = FirebaseAuth.instance.currentUser?.uid;
+    if (currentUserId == null) return;
+
+    // Step 1: Update chat metadata (last seen)
+    final chatDoc = await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.room.id)
+        .get();
+
+    if (chatDoc.exists) {
+      final lastMessage = chatDoc.data()?['lastMessage'];
+      await FirebaseFirestore.instance
+          .collection('chats')
+          .doc(widget.room.id)
+          .set({
+        'lastSeenMessage': lastMessage,
+        'lastSeenTime': FieldValue.serverTimestamp(),
+        'hasUnread': false,
+        'unreadBy': {
+          currentUserId: false,
+        },
+      }, SetOptions(merge: true));
+    }
+
+    // Step 2: Mark all messages sent *to this user* as seen
+    final unreadMessages = await FirebaseFirestore.instance
+        .collection('chats')
+        .doc(widget.room.id)
+        .collection('messages')
+        .where('metadata.isSeen', isEqualTo: false)
+        .where('metadata.receiverId', isEqualTo: currentUserId)
+        .get();
+
+    final batch = FirebaseFirestore.instance.batch();
+
+    for (final doc in unreadMessages.docs) {
+      final metadata = Map<String, dynamic>.from(doc.data()['metadata'] ?? {});
+      metadata['isSeen'] = true;
+      metadata['seenAt'] = FieldValue.serverTimestamp();
+
+      batch.update(doc.reference, {
+        'metadata': metadata,
+      });
+    }
+
+    await batch.commit();
   }
 
   void _setAttachmentUploading(bool uploading) {
@@ -231,7 +296,9 @@ class _ChatPageState extends State<ChatPage> {
           leading: IconButton(
             icon: const Icon(Icons.arrow_back),
             color: Colors.blue,
-            onPressed: () { Navigator.pop(context); },//Get.toNamed(Routes.comment);},
+            onPressed: () {
+              Navigator.pop(context);
+            }, //Get.toNamed(Routes.comment);},
           ),
         ),
         body: StreamBuilder<types.Room>(

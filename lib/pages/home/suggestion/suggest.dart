@@ -31,6 +31,7 @@ class _SuggestEjazState extends State<SuggestEjaz> {
     final localeProv = Provider.of<LocaleProvider>(context);
     final usableHeight =
         MediaQuery.of(context).size.height - MediaQuery.of(context).padding.top;
+        bool isArabic =localeProv.localelang!.languageCode == "ar";
     return Scaffold(
         body: NestedScrollView(
             body: Stack(children: [
@@ -376,7 +377,7 @@ class _SuggestEjazState extends State<SuggestEjaz> {
                             }
                           },
                           child: Padding(
-                            padding: EdgeInsets.only(top: 8.0),
+                            padding: EdgeInsets.only(top: isArabic ? 0:8.0),
                             child: Text(AppLocalizations.of(context)!.submit),
                           ),
                         )

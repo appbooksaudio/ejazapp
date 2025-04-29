@@ -17,7 +17,6 @@ import 'package:get/get.dart';
 import 'package:octo_image/octo_image.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter_gen/gen_l10n/app_localizations.dart';
-import 'package:shimmer/shimmer.dart';
 
 var lang = mybox!.get('lang');
 
@@ -92,29 +91,33 @@ class BookCard extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10.0),
-              child: OctoImage(
-                image: CachedNetworkImageProvider(book!.imagePath),
-                fit: BoxFit.contain,
-                width: 110,
-                errorBuilder: OctoError.icon(
-                  color: Theme.of(context).colorScheme.error,
+            Container(
+              alignment: Alignment.center,
+              // Center the image
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10.0),
+                child: OctoImage(
+                  image: CachedNetworkImageProvider(book!.imagePath),
+                  fit: BoxFit.contain,
+                  width: 110,
+                  errorBuilder: OctoError.icon(
+                    color: Theme.of(context).colorScheme.error,
+                  ),
                 ),
               ),
             ),
             const SizedBox(height: 12),
-            Text(
-              // ignore: unrelated_type_equality_checks
-              localprovider.localelang!.languageCode == 'ar'
-                  ? book!.bk_Name_Ar!
-                  : book!.bk_Name!,
-              style: theme.textTheme.bodyMedium!
-                  .copyWith(height: 1.3, fontSize: 12),
-              textAlign: TextAlign.start,
-              maxLines: 2,
-            ),
-            const SizedBox(height: 1),
+             Text(
+               // ignore: unrelated_type_equality_checks
+               localprovider.localelang!.languageCode == 'ar'
+                   ? book!.bk_Name_Ar!
+                   : book!.bk_Name!,
+               style: theme.textTheme.bodyMedium!
+                   .copyWith(height: 1.3, fontSize: 12),
+               textAlign: TextAlign.start,
+               maxLines: 2,
+             ),
+            const SizedBox(height: 3),
             Wrap(
               runSpacing: 1,
               children: book!.authors
@@ -141,32 +144,32 @@ class BookCard extends StatelessWidget {
                   .values
                   .toList(),
             ),
-            const SizedBox(height: 1),
-            Row(
-              children: [
-                const Icon(
-                  Feather.globe,
-                  size: 15,
-                ),
-                const SizedBox(
-                  width: 5,
-                ),
-                Padding(
-                  padding: localprovider.localelang!.languageCode == 'en'
-                      ? const EdgeInsets.only(top: 8.0)
-                      : EdgeInsets.all(0),
-                  child: Text(
-                    localprovider.localelang!.languageCode == 'en'
-                        ? book!.bk_Language!
-                        : book!.bk_Language_Ar!,
-                    style: theme.textTheme.bodyMedium!
-                        .copyWith(color: Colors.blueGrey),
-                    textAlign: TextAlign.start,
-                    maxLines: 2,
-                  ),
-                ),
-              ],
-            )
+            const SizedBox(height: 3),
+             Row(
+               children: [
+                 const Icon(
+                   Feather.globe,
+                   size: 15,
+                 ),
+                 const SizedBox(
+                   width: 5,
+                 ),
+                 Padding(
+                   padding: localprovider.localelang!.languageCode == 'en'
+                       ? const EdgeInsets.only(top: 8.0)
+                       : EdgeInsets.all(0),
+                   child: Text(
+                     localprovider.localelang!.languageCode == 'en'
+                         ? book!.bk_Language!
+                         : book!.bk_Language_Ar!,
+                     style: theme.textTheme.bodyMedium!
+                         .copyWith(color: Colors.blueGrey),
+                     textAlign: TextAlign.start,
+                     maxLines: 2,
+                   ),
+                 ),
+               ],
+             )
           ],
         ));
   }
@@ -366,8 +369,10 @@ class GroupBookVerticalCard extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.only(right: isGrid ? 0.0 : 15.0),
       child: GestureDetector(
-        onTap: () {
-          BooksApi().GetEjazCollectionById(collection!.bc_ID!);
+        onTap: () async{
+           await Get.toNamed<dynamic>(Routes.collection,
+        arguments: collection);
+         
         },
         child: SizedBox(
           width: 240,
@@ -400,7 +405,7 @@ class GroupBookVerticalCard extends StatelessWidget {
                   ),
                 ),
 
-                const SizedBox(height: 10),
+                const SizedBox(height: 6),
 
                 // Title
                 Padding(

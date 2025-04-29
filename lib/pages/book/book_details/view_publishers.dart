@@ -1,3 +1,4 @@
+import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/constants.dart';
@@ -19,7 +20,7 @@ class _ListViewpublisherState extends State<ListViewpublisher> {
   Book? book;
   String Id_Pub = "";
   String Id_Pub_name = "";
-  List<Book> listbookrelited = [];
+
   @override
   void initState() {
     // TODO: implement initState
@@ -27,18 +28,15 @@ class _ListViewpublisherState extends State<ListViewpublisher> {
     book = Get.arguments[0] as Book;
     Id_Pub_name = Get.arguments[1] as String;
     Id_Pub = Get.arguments[2] as String;
+    ;
+    Future.microtask(() async {
+      await Provider.of<BooksApi>(context, listen: false)
+          .getBooksBypublishers(Id_Pub);
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    listbookrelited = [];
-    for (var i = 0; i < mockBookList.length; i++) {
-      if (mockBookList[i].publishers.isNotEmpty) {
-        if (mockBookList[i].publishers[0]['pb_ID'] == Id_Pub) {
-          listbookrelited.add(mockBookList[i]);
-        }
-      }
-    }
     final orientation = MediaQuery.of(context).orientation;
     var height = MediaQuery.of(context).size.height;
     final themeProv = Provider.of<ThemeProvider>(context);
@@ -71,40 +69,51 @@ class _ListViewpublisherState extends State<ListViewpublisher> {
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Padding(
-                  padding: const EdgeInsets.only(left: 20.0, right: 20),
-                  child: Text(
-                    localprovider.localelang!.languageCode == 'en'
-                        ? "Showing" + " ${listbookrelited.length} " + "books"
-                        : "عرض" + " ${listbookrelited.length} " + "كتب ",
-                    textAlign: TextAlign.start,
-                    style: theme.textTheme.bodyMedium!
-                        .copyWith(height: 1.3, fontSize: 15),
-                  ),
-                ),
+                    padding: const EdgeInsets.only(left: 20.0, right: 20),
+                    child: Consumer<BooksApi>(
+                      builder: (context, booksApi, child) {
+                        return Text(
+                          "${localprovider.localelang!.languageCode == 'en' ? "Showing" : "عرض"} "
+                          "${booksApi.getbooksbypublishers.length} "
+                          "${localprovider.localelang!.languageCode == 'en' ? "books" : "كتب"}",
+                          textAlign: TextAlign.start,
+                          style: theme.textTheme.bodyMedium!
+                              .copyWith(height: 1.3, fontSize: 15),
+                        );
+                      },
+                    )),
               ],
             ),
             Padding(
               padding: const EdgeInsets.only(top: 40.0),
-              child: GridView.builder(
-                  gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                    mainAxisSpacing: 0,
-                    crossAxisSpacing: 0,
-                    mainAxisExtent: height * 0.30,
-                    crossAxisCount:
-                        (orientation == Orientation.portrait) ? 3 : 6,
-                    childAspectRatio: MediaQuery.of(context).size.width /
-                        (MediaQuery.of(context).size.height),
-                  ),
-                  itemCount: listbookrelited.length,
-                  scrollDirection: Axis.vertical,
-                  physics: const BouncingScrollPhysics(),
-                  shrinkWrap: true,
-                  padding: const EdgeInsets.only(left: Const.margin),
-                  itemBuilder: (BuildContext context, int index) {
-                    Book book;
-                    book = listbookrelited[index];
-                    return BookCardDetailsCategory(book: book);
-                  }),
+              child: Consumer<BooksApi>(
+                builder: (context, booksApi, child) {
+                  return booksApi.getbooksbypublishers.isNotEmpty
+                      ? GridView.builder(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
+                            mainAxisSpacing: 0,
+                            crossAxisSpacing: 0,
+                            mainAxisExtent: height * 0.30,
+                            crossAxisCount:
+                                (orientation == Orientation.portrait) ? 3 : 6,
+                            childAspectRatio:
+                                MediaQuery.of(context).size.width /
+                                    (MediaQuery.of(context).size.height),
+                          ),
+                          itemCount: booksApi.getbooksbypublishers.length,
+                          scrollDirection: Axis.vertical,
+                          physics: const BouncingScrollPhysics(),
+                          shrinkWrap: true,
+                          padding: const EdgeInsets.only(left: Const.margin),
+                          itemBuilder: (BuildContext context, int index) {
+                            Book book;
+                            book = booksApi.getbooksbypublishers[index];
+                            return BookCardDetailsCategory(book: book);
+                          })
+                      : Center(child: CircularProgressIndicator());
+                },
+              ),
             ),
           ],
         ),

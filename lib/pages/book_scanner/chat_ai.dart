@@ -251,7 +251,7 @@ class GeminiChatState extends State<GeminiChat> {
           String response = event.content?.parts?.fold(
                   "",
                   (previousValue, currentValue) =>
-                      "$previousValue ${currentValue.text}") ??
+                      "$previousValue ${currentValue}") ??
               "";
 
           lastMessage.text += response;
@@ -263,7 +263,7 @@ class GeminiChatState extends State<GeminiChat> {
           String response = event.content?.parts?.fold(
                   "",
                   (previousValue, currentValue) =>
-                      "$previousValue ${currentValue.text}") ??
+                      "$previousValue ${currentValue}") ??
               "";
 
           ChatMessage message = ChatMessage(

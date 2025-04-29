@@ -3,7 +3,7 @@ import 'dart:io';
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/helpers/colors.dart';
 import 'package:ejazapp/helpers/constants.dart';
-import 'package:ejazapp/pages/playlist/play_audio_multi/audiobookitem.dart';
+import 'package:ejazapp/pages/book/play_audio_single/audiobookitem.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/widgets/book_card.dart';
 import 'package:ejazapp/widgets/empty_widget.dart';

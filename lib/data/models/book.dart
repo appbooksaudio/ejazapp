@@ -175,12 +175,21 @@ class Book extends HiveObject {
   final String? iconCategory;
   @HiveField(30)
   final String? authoicon;
+  @HiveField(31)
+  final String? bk_Title;
+  @HiveField(32)
+  final String? bk_Title_Ar;
+   @HiveField(33)
+  final String? url;
 
   Book({
     this.bk_ID,
     this.bk_Code,
     this.bk_Name,
     this.bk_Name_Ar,
+    this.bk_Title,
+    this.bk_Title_Ar,
+    this.url,
     this.bk_Introduction,
     this.bk_Introduction_Ar,
     this.bk_Summary,
@@ -215,17 +224,34 @@ class Book extends HiveObject {
     return Book(
       bk_ID: json['bk_ID'] as String?,
       bk_Code: json['bk_Code'] as String?,
-      bk_Name: json['bk_Name'] == 'N/A' ? json['bk_Name_Ar'] as String? : json['bk_Name'] as String?,
+      url: json['url'] as String?,
+      bk_Name: json['bk_Name'] == 'N/A'
+          ? json['bk_Name_Ar'] as String?
+          : json['bk_Name'] as String?,
       bk_Name_Ar: json['bk_Name_Ar'] as String?,
-      bk_Introduction: json['bk_Introduction'] == 'N/A' ? json['bk_Introduction_Ar'] as String? : json['bk_Introduction'] as String?,
+      bk_Title: json['bk_Title'] == 'N/A'
+          ? json['bk_Title_Ar'] as String?
+          : json['bk_Title'] as String?,
+      bk_Title_Ar: json['bk_Title_Ar'] as String?,
+      bk_Introduction: json['bk_Introduction'] == 'N/A'
+          ? json['bk_Introduction_Ar'] as String?
+          : json['bk_Introduction'] as String?,
       bk_Introduction_Ar: json['bk_Introduction_Ar'] as String?,
-      bk_Summary: json['bk_Summary'] == 'N/A' ? json['bk_Summary_Ar'] as String? : json['bk_Summary'] as String?,
+      bk_Summary: json['bk_Summary'] == 'N/A'
+          ? json['bk_Summary_Ar'] as String?
+          : json['bk_Summary'] as String?,
       bk_Summary_Ar: json['bk_Summary_Ar'] as String?,
-      bk_Characters: json['bk_Characters'] == 'N/A' ? json['bk_Characters_Ar'] as String? : json['bk_Characters'] as String?,
+      bk_Characters: json['bk_Characters'] == 'N/A'
+          ? json['bk_Characters_Ar'] as String?
+          : json['bk_Characters'] as String?,
       bk_Characters_Ar: json['bk_Characters_Ar'] as String?,
-      bk_Desc: json['bk_Desc'] == 'N/A' ? json['bk_Desc_Ar'] as String? : json['bk_Desc'] as String?,
+      bk_Desc: json['bk_Desc'] == 'N/A'
+          ? json['bk_Desc_Ar'] as String?
+          : json['bk_Desc'] as String?,
       bk_Desc_Ar: json['bk_Desc_Ar'] as String?,
-      bk_Language: json['bk_Language'] == 'N/A' ? json['bk_Language_Ar'] as String? : json['bk_Language'] as String?,
+      bk_Language: json['bk_Language'] == 'N/A'
+          ? json['bk_Language_Ar'] as String?
+          : json['bk_Language'] as String?,
       bk_Language_Ar: json['bk_Language_Ar'] as String?,
       bk_Active: json['bk_Active'] as bool?,
       bk_CreatedOn: json['bk_CreatedOn'] as String?,
@@ -234,8 +260,12 @@ class Book extends HiveObject {
       imagePath: json['media'] != null && (json['media'] as List).isNotEmpty
           ? json['media'][0]['md_URL'] as String
           : "5337aa5b-949b-4dd2-8563-08db749b866d",
-      audioEn: json['md_AudioEn_URL'] != null ? json['md_AudioEn_URL'] as String : Const.UrlAu,
-      audioAr: json['md_AudioAr_URL'] != null ? json['md_AudioAr_URL'] as String : Const.UrlAu,
+      audioEn: json['md_AudioEn_URL'] != null
+          ? json['md_AudioEn_URL'] as String
+          : Const.UrlAu,
+      audioAr: json['md_AudioAr_URL'] != null
+          ? json['md_AudioAr_URL'] as String
+          : Const.UrlAu,
       categories: json['categories'] as List<dynamic>? ?? [],
       genres: json['genres'] as List<dynamic>? ?? [],
       publishers: json['publishers'] as List<dynamic>? ?? [],
@@ -255,7 +285,10 @@ class Book extends HiveObject {
       'bk_ID': bk_ID,
       'bk_Code': bk_Code,
       'bk_Name': bk_Name,
+      'url': url,
       'bk_Name_Ar': bk_Name_Ar,
+      'bk_Title': bk_Title,
+      'bk_Title_Ar': bk_Title_Ar,
       'bk_Introduction': bk_Introduction,
       'bk_Introduction_Ar': bk_Introduction_Ar,
       'bk_Summary': bk_Summary,
@@ -286,5 +319,8 @@ class Book extends HiveObject {
     };
   }
 }
+
 List<Book> mockBookList = [];
 List<Book> collectionListById = [];
+List<Book> LastBooks = [];
+List<Book> getbooksbypublishers = [];

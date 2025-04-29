@@ -1,5 +1,4 @@
 import 'package:camera/camera.dart';
-import 'package:file_picker/file_picker.dart';
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_icons/flutter_icons.dart';
@@ -35,10 +34,10 @@ late TextEditingController messageController;
   }
 
   _filePicker()async{
-    FilePickerResult? result = await FilePicker.platform.pickFiles();
-    if(result!=null){
+   // FilePickerResult? result = await FilePicker.platform.pickFiles();
+    // if(result!=null){
 
-    }
+    // }
   }
   _messageSending()async{
     print('tappped');

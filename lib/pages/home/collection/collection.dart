@@ -1,4 +1,5 @@
 import 'package:cached_network_image/cached_network_image.dart';
+import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/data/models/collections.dart';
 import 'package:ejazapp/helpers/colors.dart';
@@ -25,7 +26,9 @@ class _CollectionPageState extends State<CollectionPage>
   List<Book> collectionByIdList = [];
   @override
   void initState() {
-    book = Get.arguments as List<Book>;
+    collection = Get.arguments ;
+      final booksApi = Provider.of<BooksApi>(context, listen: false);
+  booksApi.GetBooksByCollectionId(collection!.bc_ID!);
     super.initState();
   }
 
@@ -36,23 +39,24 @@ class _CollectionPageState extends State<CollectionPage>
 
   @override
   Widget build(BuildContext context) {
-    for (int i = 0; i < book!.length; i++) {
-      if (book!.length > 0) {
-        collectionByIdList.add(mockBookList
-            .where((element) => element.bk_ID == book![i].bk_ID)
-            .first);
-      }
-    }
+    // for (int i = 0; i < book!.length; i++) {
+    //   if (book!.length > 0) {
+    //     collectionByIdList.add(mockBookList
+    //         .where((element) => element.bk_ID == book![i].bk_ID)
+    //         .first);
+    //   }
+    // }
 
-    int numbook = collectionByIdList.length;
     final themeProv = Provider.of<ThemeProvider>(context);
     final orientation = MediaQuery.of(context).orientation;
     final localeProv = Provider.of<LocaleProvider>(context);
     final heigth = MediaQuery.of(context).size.height;
     final theme = Theme.of(context);
+    final booksApi = Provider.of<BooksApi>(context, listen: true);
+    int numbook = booksApi.BooksByCollection.length;
     return Scaffold(
-      backgroundColor:themeProv.isDarkTheme!
-                ?ColorDark.background: ColorLight.primary,
+      backgroundColor:
+          themeProv.isDarkTheme! ? ColorDark.background : ColorLight.primary,
       appBar: AppBar(
         backgroundColor: themeProv.isDarkTheme!
             ? ColorDark.background
@@ -82,7 +86,8 @@ class _CollectionPageState extends State<CollectionPage>
                       borderRadius: BorderRadius.circular(10.0),
                       child: OctoImage(
                         alignment: Alignment.topLeft,
-                        image: CachedNetworkImageProvider(book![0].imagePath),
+                        image: CachedNetworkImageProvider(
+                            booksApi.collectionActive[0].imagePath!),
                         fit: BoxFit.contain,
                         height: 80,
                         errorBuilder: OctoError.icon(
@@ -90,24 +95,23 @@ class _CollectionPageState extends State<CollectionPage>
                         ),
                       ),
                     ),
-                     SizedBox(height: heigth * 0.02),
+                    SizedBox(height: heigth * 0.02),
                     Expanded(
                         child: Text(
                       localeProv.localelang!.languageCode == 'ar'
-                          ? book![0].bk_Name_Ar!
-                          : book![0].bk_Name!,
+                          ? booksApi.collectionActive[0].bc_Title_Ar
+                          : booksApi.collectionActive[0].bc_Title,
                       style: theme.textTheme.headlineLarge!.copyWith(
                           color: Colors.white, fontSize: 25, height: 1.2),
                       textAlign: TextAlign.center,
                       maxLines: 2,
                     )),
-                 
                   ],
                 )),
           ),
-              SizedBox(height: heigth * 0.01),
+          SizedBox(height: heigth * 0.01),
           Container(
-            height: MediaQuery.of(context).size.height * 0.75 ,
+            height: MediaQuery.of(context).size.height * 0.75,
             width: double.infinity,
             color: themeProv.isDarkTheme!
                 ? ColorDark.background
@@ -133,25 +137,34 @@ class _CollectionPageState extends State<CollectionPage>
                   onTap: () {},
                 ),
                 const SizedBox(height: 20),
-                GridView.builder(
-                    gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                      // crossAxisSpacing: 5,
-                      crossAxisCount:
-                          (orientation == Orientation.portrait) ? 3 : 3,
-                      childAspectRatio: MediaQuery.of(context).size.width /
-                          (MediaQuery.of(context).size.height),
-                    ),
-                    itemCount: collectionByIdList.length,
-                    scrollDirection: Axis.vertical,
-                    physics: const BouncingScrollPhysics(),
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.only(
-                        left: Const.margin, right: Const.margin),
-                    itemBuilder: (context, index) {
-                      final Book book1;
-                      book1 = collectionByIdList[index];
-                      return BookCardDetailsCategory(book: book1);
-                    }),
+                Consumer<BooksApi>(
+                  builder: (context, booksApi, child) {
+                    // Check if books are fetched
+                    if (booksApi.BooksByCollection.isNotEmpty) {
+                      return GridView.builder(
+                        gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount:
+                              (orientation == Orientation.portrait) ? 3 : 3,
+                          childAspectRatio: MediaQuery.of(context).size.width /
+                              (MediaQuery.of(context).size.height),
+                        ),
+                        itemCount: booksApi.BooksByCollection.length,
+                        scrollDirection: Axis.vertical,
+                        physics: const BouncingScrollPhysics(),
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.only(
+                            left: Const.margin, right: Const.margin),
+                        itemBuilder: (context, index) {
+                          final Book book1 = booksApi.BooksByCollection[index];
+                          return BookCardDetailsCategory(book: book1);
+                        },
+                      );
+                    } else {
+                      // If no books are available, show loading indicator
+                      return Center(child: CircularProgressIndicator());
+                    }
+                  },
+                ),
               ]),
             ),
           )

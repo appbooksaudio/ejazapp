@@ -8,9 +8,11 @@ class NetworkController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    // Listen for connectivity changes and handle a single ConnectivityResult
     _connectivity.onConnectivityChanged.listen(_updateConnectionStatus);
   }
 
+  // This function directly accepts a single ConnectivityResult
   void _updateConnectionStatus(ConnectivityResult connectivityResult) {
     if (connectivityResult == ConnectivityResult.none) {
       Get.snackbar(

@@ -57,20 +57,20 @@ class _BottomNavPageState extends State<BottomNavPage> {
         return false;
       },
       child: Scaffold(
-       // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
-      // floatingActionButton: FloatingActionButton(
-      //   shape: const RoundedRectangleBorder(
-      //       borderRadius: BorderRadius.only(
-      //           topRight: Radius.circular(100),
-      //           bottomLeft: Radius.circular(100),
-      //           bottomRight: Radius.circular(100),
-      //           topLeft: Radius.circular(100))),
-      //   child: const Icon(Icons.add,color: Colors.white,),
-      //   onPressed: () {
-      //   // Get.toNamed(Routes.addpost);
-        
-      //   },
-      // ),
+        // floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+        // floatingActionButton: FloatingActionButton(
+        //   shape: const RoundedRectangleBorder(
+        //       borderRadius: BorderRadius.only(
+        //           topRight: Radius.circular(100),
+        //           bottomLeft: Radius.circular(100),
+        //           bottomRight: Radius.circular(100),
+        //           topLeft: Radius.circular(100))),
+        //   child: const Icon(Icons.add,color: Colors.white,),
+        //   onPressed: () {
+        //   // Get.toNamed(Routes.addpost);
+
+        //   },
+        // ),
         body: Stack(children: [
           PageView(
             controller: _pageController,
@@ -85,10 +85,10 @@ class _BottomNavPageState extends State<BottomNavPage> {
                 controller: BooksApi(),
               ),
               Explore(),
-             // GeminiChat(),
-             // AddPost(),
+              // GeminiChat(),
+              // AddPost(),
               //ListBook(),
-             // ChatListScreen(),
+              // ChatListScreen(),
               Create_showList(),
               // OrderPage(),
               ProfilePage(),
@@ -226,10 +226,11 @@ class _BottomNavPageState extends State<BottomNavPage> {
             Container(),
         ]),
         bottomNavigationBar: BottomNavigationBar(
-           type: BottomNavigationBarType.fixed,
-    selectedItemColor: theme.primaryColor,
-    unselectedItemColor: themeProv.isDarkTheme! ? ColorLight.background : ColorDark.card,
-    currentIndex: _selectedIndex,
+          type: BottomNavigationBarType.fixed,
+          selectedItemColor: theme.primaryColor,
+          unselectedItemColor:
+              themeProv.isDarkTheme! ? ColorLight.background : ColorDark.card,
+          currentIndex: _selectedIndex,
           backgroundColor:
               themeProv.isDarkTheme! ? ColorDark.card : ColorLight.background,
           onTap: (value) {
@@ -241,19 +242,18 @@ class _BottomNavPageState extends State<BottomNavPage> {
                 curve: Curves.ease,
               );
             });
-           },
+          },
           items: [
             BottomNavigationBarItem(
-              icon: Container(
-              padding: EdgeInsets.symmetric(vertical: 7),
-             child: Icon( Feather.home) ),
-              label: AppLocalizations.of(context)!.home
-            ),
+                icon: Container(
+                    padding: EdgeInsets.symmetric(vertical: 7),
+                    child: Icon(Feather.home)),
+                label: AppLocalizations.of(context)!.home),
             BottomNavigationBarItem(
-              icon:Container(
-              padding: EdgeInsets.symmetric(vertical: 7),
-             child: Icon(Feather.search) ),
-              label:AppLocalizations.of(context)!.explore, 
+              icon: Container(
+                  padding: EdgeInsets.symmetric(vertical: 7),
+                  child: Icon(Feather.search)),
+              label: AppLocalizations.of(context)!.explore,
             ),
             //   BottomNavigationBarItem(
             //   icon:Container(
@@ -267,22 +267,20 @@ class _BottomNavPageState extends State<BottomNavPage> {
 //              child: Icon(Icons.motion_photos_auto)
 //  ),
 //               label:AppLocalizations.of(context)!.chatai,
-             
+
 //             ),
-            
+
             BottomNavigationBarItem(
               icon: Container(
-              padding: EdgeInsets.symmetric(vertical: 7),
-             child: Icon(Icons.play_circle_outline) ) ,
+                  padding: EdgeInsets.symmetric(vertical: 7),
+                  child: Icon(Icons.play_circle_outline)),
               label: AppLocalizations.of(context)!.list,
-             
             ),
             BottomNavigationBarItem(
               icon: Container(
-              padding: EdgeInsets.symmetric(vertical: 7),
-             child: Icon(Feather.user) ) ,
-              label:AppLocalizations.of(context)!.profile, 
-             
+                  padding: EdgeInsets.symmetric(vertical: 7),
+                  child: Icon(Feather.user)),
+              label: AppLocalizations.of(context)!.profile,
             ),
           ],
         ),

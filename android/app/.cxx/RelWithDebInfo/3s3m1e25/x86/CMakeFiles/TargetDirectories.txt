@@ -1,0 +1,2 @@
+/Users/whsini/ejazapp/android/app/.cxx/RelWithDebInfo/3s3m1e25/x86/CMakeFiles/edit_cache.dir
+/Users/whsini/ejazapp/android/app/.cxx/RelWithDebInfo/3s3m1e25/x86/CMakeFiles/rebuild_cache.dir

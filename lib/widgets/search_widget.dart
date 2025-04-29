@@ -67,7 +67,7 @@ class _SearchWidgetState extends State<SearchWidget> {
                       )
                     : null,
                 hintText:
-                    AppLocalizations.of(context)!.search_your_favorite_book,
+                   widget.hintText,
                 contentPadding: localprovider.localelang!.languageCode == 'ar'
                     ? widget.text.isEmpty
                         ? EdgeInsets.only(top: 0.0)

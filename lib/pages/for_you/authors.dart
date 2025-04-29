@@ -17,41 +17,31 @@ class AuthorsExplore extends StatefulWidget {
 class _AuthorsExploreState extends State<AuthorsExplore> {
   @override
   Widget build(BuildContext context) {
-   
-   return Consumer<BooksApi>(
-      builder:  (context, booksApi, child) { return  Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          const SizedBox(height: 20),
-          booksApi.listauthors.isNotEmpty
-              ? SizedBox(
-                  width: double.infinity,
-                  height: 180,
-                  child: ListView.builder(
-                    itemCount: 23,
-                    scrollDirection: Axis.horizontal,
-                    physics: const BouncingScrollPhysics(),
-                    shrinkWrap: true,
-                    padding: const EdgeInsets.only(left: Const.margin),
-                    itemBuilder: (context, index) {
-                      final authors = booksApi.listauthors[index];
-                      return AuthorsCard(authors: authors);
-                    },
-                  ))
-              : SizedBox(
-                  height: 120.0,
-                  child: Center(
-                    child: Shimmer.fromColors(
-                      baseColor: Colors.blue,
-                      highlightColor: Colors.white,
-                      child: ContentPlaceholder(
-                        lineType: ContentLineType.threeLines,
-                      ),
-                    ),
-                  ),
-                ),
-        ],
-      );},
+    return Consumer<BooksApi>(
+      builder: (context, booksApi, child) {
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const SizedBox(height: 20),
+            SizedBox(
+                width: double.infinity,
+                height: 150,
+                child: booksApi.listauthors.isNotEmpty
+                    ? ListView.builder(
+                        itemCount: 10,
+                        scrollDirection: Axis.horizontal,
+                        physics: const BouncingScrollPhysics(),
+                        shrinkWrap: true,
+                        padding: const EdgeInsets.only(left: Const.margin),
+                        itemBuilder: (context, index) {
+                          final authors = booksApi.listauthors[index];
+                          return AuthorsCard(authors: authors);
+                        },
+                      )
+                    : Center(child: CircularProgressIndicator()))
+          ],
+        );
+      },
     );
   }
 }

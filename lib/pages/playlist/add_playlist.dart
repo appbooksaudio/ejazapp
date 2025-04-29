@@ -139,8 +139,7 @@ class _AddplayListState extends State<AddplayList> {
                   ),
                   Container(
                     height: MediaQuery.of(context).size.height * 0.7,
-                    child: mockBookList.isNotEmpty
-                        ? ListView.builder(
+                    child: ListView.builder(
                             padding: const EdgeInsets.only(top: 8.0),
                             itemCount: mockPlayList.length,
                             itemBuilder: (context, index) {
@@ -149,29 +148,7 @@ class _AddplayListState extends State<AddplayList> {
                               return PlaylistCreate(_playlistAu);
                             },
                           )
-                        : SizedBox(
-                            child: Center(
-                              child: Shimmer.fromColors(
-                                baseColor: Colors.blue,
-                                highlightColor: Colors.white,
-                                child: Column(
-                                  crossAxisAlignment: CrossAxisAlignment.center,
-                                  children: [
-                                    SizedBox(
-                                      height: 40,
-                                    ),
-                                    ContentPlaceholder(
-                                      lineType: ContentLineType.threeLines,
-                                    ),
-                                    SizedBox(
-                                      height: 10,
-                                    ),
-                                    BannerPlaceholder(),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
+                        
                   ),
                 ],
               ))
@@ -182,7 +159,7 @@ class _AddplayListState extends State<AddplayList> {
     final theme = Theme.of(context);
     final themeProv = Provider.of<ThemeProvider>(context);
     return InkWell(
-      //  onTap: () => Get.toNamed<dynamic>(Routes.addaudioplay, arguments: play),
+       onTap: () => Get.toNamed<dynamic>(Routes.addaudioplay, arguments: play),
       child: Card(
         shadowColor: Colors.grey.shade300,
         child: Padding(

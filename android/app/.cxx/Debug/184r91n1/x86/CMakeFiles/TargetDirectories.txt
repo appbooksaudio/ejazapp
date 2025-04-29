@@ -1,0 +1,2 @@
+/Users/whsini/Desktop/ejaz copy/ejazapp/android/app/.cxx/Debug/184r91n1/x86/CMakeFiles/edit_cache.dir
+/Users/whsini/Desktop/ejaz copy/ejazapp/android/app/.cxx/Debug/184r91n1/x86/CMakeFiles/rebuild_cache.dir

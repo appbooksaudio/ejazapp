@@ -13,13 +13,12 @@ import 'package:get/get.dart';
 abstract class LoginController extends GetxController {
   late BuildContext context;
   login(context);
-  
 }
 
 class LoginControllerImp extends LoginController {
   LoginData loginData = LoginData(Get.find());
   GlobalKey<FormState> formstate = GlobalKey<FormState>();
-   
+
   late TextEditingController email;
   late TextEditingController password;
 
@@ -37,7 +36,7 @@ class LoginControllerImp extends LoginController {
   List data = [];
 
   @override
-    login(context) async {
+  login(context) async {
     if (formstate.currentState!.validate()) {
       statusRequest = StatusRequest.loading;
       update();
@@ -48,6 +47,7 @@ class LoginControllerImp extends LoginController {
           mybox!.put('PaymentStatus', 'success');
           myServices.prefs.setString('name', response['displayName'] as String);
           myServices.prefs.setString("authorized", response['token'] as String);
+          myServices.prefs.setString('refreshToken', response['refreshToken']);
           myServices.prefs.setString("image", response['image'] as String);
           mybox!.put('name', response['displayName'] as String);
           await FirebaseMessaging.instance.getToken().then((value) {
@@ -63,6 +63,7 @@ class LoginControllerImp extends LoginController {
           mybox!.put('PaymentStatus', 'pending');
           myServices.prefs.setString('name', response['displayName'] as String);
           myServices.prefs.setString("authorized", response['token'] as String);
+          myServices.prefs.setString('refreshToken', response['refreshToken']);
           myServices.prefs.setString("image", response['image'] as String);
           mybox!.put('name', response['displayName'] as String);
           await FirebaseMessaging.instance.getToken().then((value) {
@@ -75,11 +76,11 @@ class LoginControllerImp extends LoginController {
           Get.offNamed(Routes.home);
           return;
         } else {
-        //  ShowPopup(response);
+          //  ShowPopup(response);
           showLoaderDialog(context);
         }
       } else {
-       // ShowPopup(response);
+        // ShowPopup(response);
         showLoaderDialog(context);
       }
       update();
@@ -113,8 +114,8 @@ class LoginControllerImp extends LoginController {
   goToForgetPassword() {
     // Get.toNamed(Routes.forgetPassword);
   }
- showLoaderDialog(
-   BuildContext context,
+  showLoaderDialog(
+    BuildContext context,
   ) {
     final theme = Theme.of(context);
     var height = MediaQuery.of(context).size.height;
@@ -137,7 +138,7 @@ class LoginControllerImp extends LoginController {
                 child: Text(
                   AppLocalizations.of(context)!.passwordwrong,
                   style: theme.textTheme.titleLarge!
-                    .copyWith(color: ColorLight.primary, fontSize: 20),
+                      .copyWith(color: ColorLight.primary, fontSize: 20),
                 ),
               ),
             ],
@@ -150,5 +151,4 @@ class LoginControllerImp extends LoginController {
       },
     );
   }
-  
 }

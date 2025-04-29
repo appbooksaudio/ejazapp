@@ -1015,10 +1015,7 @@
             "groupChat":"Group Chat",
             "searchChat":"Search Chat",
             "today":"Today",
-            "typeChatHere":"Type Chat Here..."
-
-
-
-
+            "typeChatHere":"Type Chat Here...",
+            "searchuser":"Search Chat"
 
 }

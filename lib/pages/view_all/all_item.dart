@@ -34,8 +34,9 @@ class _AllItemState extends State<AllItem> {
     }
 
     loadMore();
-    lastbookadeed = getLastNBooksAdded(mockBookList, 10);
-    print("Last books ${lastbookadeed[0].bk_Name}");
+    
+   
+   
   }
 
   Future loadMore() async {
@@ -44,14 +45,7 @@ class _AllItemState extends State<AllItem> {
     });
   }
 
-  List<Book> getLastNBooksAdded(List<Book> books, int n) {
-    // Sort the list by addedAt in descending order (most recent first)
-    books.sort((a, b) => DateTime.parse(b.bk_CreatedOn!)
-        .compareTo(DateTime.parse(a.bk_CreatedOn!)));
-
-    // Return the first N books, or the whole list if N is larger than the list length
-    return books.take(n).toList();
-  }
+  
 
   @override
   Widget build(BuildContext context) {
@@ -68,7 +62,7 @@ class _AllItemState extends State<AllItem> {
           if (mockBookList[i].categories[0]['ct_Name'] == homeindex) {
             ListCat.add(mockBookList[i]);
           } else if (homeindex == 'newejaz') {
-            ListCat = lastbookadeed;
+            ListCat = LastBooks;
           }
         }
       }
@@ -80,8 +74,8 @@ class _AllItemState extends State<AllItem> {
             ? mockBookList.length
             : RecentlyAdded!.length
         : ListCat.isEmpty
-            ? mockBookList.length
-            : ListCat.length;
+            ? LastBooks.length
+            : LastBooks.length;
 
     //***************** End  calcul number of book     *********************//
     return Scaffold(
@@ -106,7 +100,8 @@ class _AllItemState extends State<AllItem> {
                   isLoading: isLoadingVertical,
                   onEndOfPage: () => loadMore(),
                   scrollOffset: 100,
-                  child: Scrollbar(
+                  child: 
+                  Scrollbar(
                     child: GridView.builder(
                       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                         mainAxisSpacing: 0,
@@ -123,8 +118,8 @@ class _AllItemState extends State<AllItem> {
                               ? mockBookList.length
                               : RecentlyAdded!.length
                           : ListCat.isEmpty
-                              ? mockBookList.length
-                              : ListCat.length,
+                              ? LastBooks.length
+                              : LastBooks.length,
                       scrollDirection: Axis.vertical,
                       physics: const BouncingScrollPhysics(),
                       shrinkWrap: true,
@@ -135,7 +130,7 @@ class _AllItemState extends State<AllItem> {
                                 ? mockBookList[index]
                                 : RecentlyAdded![index]
                             : ListCat.isEmpty
-                                ? mockBookList[index]
+                                ? LastBooks[index]
                                 : ListCat[index];
 
                         return BookCardDetailsCategory(book: book);

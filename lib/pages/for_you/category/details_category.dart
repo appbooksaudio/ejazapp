@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/data/models/category.dart';
@@ -10,6 +12,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:octo_image/octo_image.dart';
 import 'package:provider/provider.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+import 'package:http/http.dart' as http;
 
 class CategoryPage extends StatefulWidget {
   const CategoryPage({super.key});
@@ -21,10 +25,53 @@ class CategoryPage extends StatefulWidget {
 class _CategoryPageState extends State<CategoryPage>
     with SingleTickerProviderStateMixin {
   CategoryL? category;
+  List<Book> CatBook = [];
+  String DEFAULT_TOKEN =
+      "eyJhbGciOiJIUzUxMiIsInR5cCI6IkpXVCJ9.eyJ1bmlxdWVfbmFtZSI6ImVqYXphcHA1OEBnbWFpbC5jb20iLCJuYW1laWQiOiI5NDllM2VkNy02YjBhLTQ3ZDItODNlOC00ZWU0MjA4OWQ4OGMiLCJlbWFpbCI6ImVqYXphcHA1OEBnbWFpbC5jb20iLCJuYmYiOjE3NDE3NTk1NTEsImV4cCI6MTc0NDM1MTU1MSwiaWF0IjoxNzQxNzU5NTUxfQ.cR0Yb5xYeoVxjRhO4W13MziuzWJ1vlbP6I3hgL5iZeuTiKfV50calIXVjoDQHw1S-5Zr28r5n85pBZtjaidEQQ";
+
+
   @override
   void initState() {
     category = Get.arguments as CategoryL;
+    fetchBooks(category!.ct_ID);
     super.initState();
+  }
+
+  Future<void> fetchBooks(String categoryID) async {
+    final SharedPreferences sharedPreferences =
+        await SharedPreferences.getInstance();
+    String? authorized =await sharedPreferences.getString("authorized")??DEFAULT_TOKEN;
+    Map<String, String> requestHeaders = {
+      'Content-type': 'application/json',
+      "User-Agent": "Ejaz-App/1.0",
+      "Connection": "keep-alive",
+      'Authorization': 'Bearer $authorized',
+    };
+
+    final url = Uri.parse(
+      'https://ejaz.applab.qa/api/ejaz/v1/Book/getBookByCategory/$categoryID/?Status=active&OrderBy=Title&OrderAs=DESC',
+    );
+
+    try {
+      final response = await http
+          .get(url, headers: requestHeaders)
+          .timeout(Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        List<dynamic> jsonData = json.decode(response.body);
+        List<Book> newBooks =
+            jsonData.map((data) => Book.fromJson(data)).toList();
+
+        setState(() {
+          CatBook.addAll(newBooks);
+        });
+      } else {
+        print("Failed to load books: ${response.statusCode}");
+        setState(() {});
+      }
+    } catch (error) {
+      print("Error fetching books: $error");
+    }
   }
 
   @override
@@ -34,24 +81,14 @@ class _CategoryPageState extends State<CategoryPage>
 
   @override
   Widget build(BuildContext context) {
-    List<Book> CatBook = [];
-    for (var i = 0; i < mockBookList.length; i++) {
-      if (mockBookList[i].categories.isNotEmpty)
-      // ignore: avoid_dynamic_calls, curly_braces_in_flow_control_structures
-      if (mockBookList[i].categories[0]['ct_ID'] == category!.ct_ID) {
-        CatBook.add(mockBookList[i]);
-      }
-    }
-
     int numbook = CatBook.length;
     final themeProv = Provider.of<ThemeProvider>(context);
     final orientation = MediaQuery.of(context).orientation;
     final localeProv = Provider.of<LocaleProvider>(context);
     final theme = Theme.of(context);
     return Scaffold(
-      backgroundColor: themeProv.isDarkTheme!
-            ? ColorDark.background
-            : ColorLight.primary, 
+      backgroundColor:
+          themeProv.isDarkTheme! ? ColorDark.background : ColorLight.primary,
       appBar: AppBar(
         backgroundColor: themeProv.isDarkTheme!
             ? ColorDark.background
@@ -131,7 +168,7 @@ class _CategoryPageState extends State<CategoryPage>
                   onTap: () {},
                 ),
                 const SizedBox(height: 20),
-                GridView.builder(
+               CatBook.isNotEmpty? GridView.builder(
                     gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                       crossAxisCount:
                           (orientation == Orientation.portrait) ? 3 : 3,
@@ -149,7 +186,7 @@ class _CategoryPageState extends State<CategoryPage>
 
                       book = CatBook[index];
                       return BookCardDetailsCategory(book: book);
-                    }),
+                    }): Center(child: CircularProgressIndicator()),
                 SizedBox(
                   height: 300,
                 )

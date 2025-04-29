@@ -57,7 +57,6 @@ class ErrorPopup extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   Navigator.pop(context);
-                  booksApi.hasMoreBooks=true;
                   Get.toNamed(Routes.home,
                       preventDuplicates:
                           false); // Push home route again to refresh

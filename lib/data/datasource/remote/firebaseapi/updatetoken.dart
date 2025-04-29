@@ -1,16 +1,15 @@
 import 'dart:convert';
 
 import 'package:ejazapp/connectapi/linkapi.dart';
+import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
-void UpdateFirebaseToken(String token) async {
-  print("Token             $token");
+ UpdateFirebaseToken(String token) async {
   late SharedPreferences sharedPreferences;
   sharedPreferences = await SharedPreferences.getInstance();
-  print(sharedPreferences.getString("authorized"));
-  String? authorized = sharedPreferences.getString("authorized");
+  String? authorized =await sharedPreferences.getString("authorized");
   Map<String, String> data = {"FirebaseToken": token};
 
   int contentlength = utf8.encode(json.encode(data)).length;

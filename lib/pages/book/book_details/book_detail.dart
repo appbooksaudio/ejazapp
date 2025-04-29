@@ -5,6 +5,7 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:e_book_reader/reader_controller.dart';
 import 'package:ejazapp/core/services/services.dart';
+import 'package:ejazapp/data/datasource/remote/listapi/getdataserver.dart';
 import 'package:ejazapp/data/models/authors.dart';
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/data/models/favorite.dart';
@@ -21,7 +22,6 @@ import 'package:flutter_gen/gen_l10n/app_localizations.dart';
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
-import 'package:flutter_windowmanager/flutter_windowmanager.dart';
 import 'package:fluttertoast/fluttertoast.dart';
 import 'package:get/get.dart';
 import 'package:hive/hive.dart';
@@ -48,12 +48,48 @@ class _BookDetailPageState extends State<BookDetailPage>
   late Timer t;
   Book? book;
   int NbookFinishid = 0;
+  bool isLoodserch = true;
+  String search = "";
   @override
   void initState() {
     super.initState();
-    book = Get.arguments[0] as Book;
+    book = Get.arguments[0] as Book?;
     file = Get.arguments[1] as String;
     LanguageStatus = Get.arguments[2] as String;
+    search = Get.arguments.length > 3
+        ? Get.arguments[3] as String
+        : ''; // Default to an empty string if not provided
+
+// Update UI state based on search
+    if (search.isNotEmpty) {
+      setState(() {
+        isLoodserch = false; // Improved variable name for clarity
+      });
+
+      Future.delayed(Duration.zero, () async {
+        final booksApi = Provider.of<BooksApi>(context, listen: false);
+
+        try {
+          // Fetch books using the search parameter
+          await booksApi.searchBookbyId(book!.bk_ID!);
+
+          // After fetching, update the book if found
+          setState(() {
+            if (booksApi.ListBookbyId.isNotEmpty) {
+              book = booksApi.ListBookbyId.first;
+            }
+            isLoodserch = true; // Re-enable the loading state
+          });
+        } catch (e) {
+          // Handle potential errors
+          setState(() {
+            isLoodserch = true;
+          });
+          print("Error fetching book by ID: $e");
+        }
+      });
+    }
+
 // ******** initiale hive storage **********
     initHiveStorage(book);
 // ******** GetRating **********
@@ -61,6 +97,12 @@ class _BookDetailPageState extends State<BookDetailPage>
 // ******** Screenshot disabled **********
     ScreenShotDisabled();
     start();
+    BooKView();
+  }
+
+  BooKView() async {
+    final booksApi = Provider.of<BooksApi>(context, listen: false);
+    await booksApi.PutBooksViews(book!.bk_ID!);
   }
 
   Future<void> start() async {
@@ -86,71 +128,133 @@ class _BookDetailPageState extends State<BookDetailPage>
   }
 
 //********** */ function add book activity to firestore addBookRead() **********/////////
+  // Future<void> addBookRead(
+  //     String category, int booksRead, int Totalbooks) async {
+  //   final FirebaseAuth _auth = FirebaseAuth.instance;
+  //   // Get the current date
+  //   DateTime now = DateTime.now();
+  //   final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
+  //   DocumentSnapshot<Map<String, dynamic>> data_bookRead =
+  //       await _firebaseFirestore
+  //           .collection('books_read')
+  //           .doc(_auth.currentUser!.uid)
+  //           .get();
+  //   Map<String, dynamic>? docData = data_bookRead.data();
+  //   print(docData);
+  //   if (docData != null) {
+  //     List<dynamic> listdate = (docData["listdate"] as List<dynamic>)
+  //         .map((listdate) => Map<String, dynamic>.from(listdate))
+  //         .toList();
+  //     int index = -1;
+  //     // DateTime dateDay = DateTime.now();
+  //     // for (int i = 0; i < listdate.length; i++) {
+  //     //   DateTime ddate = listdate[i]['timestamp'].toDate();
+  //     //   if (ddate.day == dateDay.day) {
+  //     //     index = i;
+  //     //     // return;
+  //     //   }
+  //     // }
+  //     DateTime today = DateTime.now();
+  //     DateTime todayDateOnly = DateTime(today.year, today.month, today.day);
+
+  //     index = listdate.indexWhere((element) {
+  //       DateTime ddate = element['timestamp'].toDate();
+  //       DateTime ddateOnly = DateTime(ddate.year, ddate.month, ddate.day);
+  //       return ddateOnly == todayDateOnly;
+  //     });
+  //     if (index != -1) {
+  //       listdate[index]['booksRead'] = listdate[index]['booksRead'] + booksRead;
+  //     } else {
+  //       listdate.add(
+  //           {'timestamp': Timestamp.fromDate(now), 'booksRead': booksRead});
+  //     }
+
+  //     await FirebaseFirestore.instance
+  //         .collection('books_read')
+  //         .doc(_auth.currentUser!.uid)
+  //         .set({
+  //       'timestamp':
+  //           Timestamp.fromDate(now), // Store the current time as timestamp
+  //       'booksRead': Totalbooks, // Number of books read
+  //       'category': category,
+  //       'bookID': book!.bk_ID,
+  //       'listdate': listdate // Category of the books (optional)
+  //     });
+  //   } else {
+  //     // Add a new document to the "books_read" collection
+
+  //     await FirebaseFirestore.instance
+  //         .collection('books_read')
+  //         .doc(_auth.currentUser!.uid)
+  //         .set({
+  //       'timestamp':
+  //           Timestamp.fromDate(now), // Store the current time as timestamp
+  //       'booksRead': Totalbooks, // Number of books read
+  //       'category': category,
+  //       'bookID': book!.bk_ID,
+  //       'listdate': [
+  //         {'timestamp': Timestamp.fromDate(now), 'booksRead': booksRead}
+  //       ]
+  //       // Category of the books (optional)
+  //     });
+  //   }
+
+  //   print("Book read data added!");
+  // }
   Future<void> addBookRead(
-      String category, int booksRead, int Totalbooks) async {
-    final FirebaseAuth _auth = FirebaseAuth.instance;
-    // Get the current date
-    DateTime now = DateTime.now();
-    final FirebaseFirestore _firebaseFirestore = FirebaseFirestore.instance;
-    DocumentSnapshot<Map<String, dynamic>> data_bookRead =
-        await _firebaseFirestore
-            .collection('books_read')
-            .doc(_auth.currentUser!.uid)
-            .get();
-    Map<String, dynamic>? docData = data_bookRead.data();
-    print(docData);
-    if (docData != null) {
-      List<dynamic> listdate = (docData["listdate"] as List<dynamic>)
-          .map((listdate) => Map<String, dynamic>.from(listdate))
-          .toList();
-      int index = -1;
-      DateTime dateDay = DateTime.now();
-      for (int i = 0; i < listdate.length; i++) {
-        DateTime ddate = listdate[i]['timestamp'].toDate();
-        if (ddate.day == dateDay.day) {
-          index = i;
-          // return;
-        }
-      }
-      if (index != -1) {
-        listdate[index]['booksRead'] = listdate[index]['booksRead'] + booksRead;
-      } else {
-        listdate.add(
-            {'timestamp': Timestamp.fromDate(now), 'booksRead': booksRead});
-      }
+    String category, int booksRead, int totalBooks) async {
+  final user = FirebaseAuth.instance.currentUser;
+  if (user == null) return;
 
-      await FirebaseFirestore.instance
-          .collection('books_read')
-          .doc(_auth.currentUser!.uid)
-          .set({
-        'timestamp':
-            Timestamp.fromDate(now), // Store the current time as timestamp
-        'booksRead': Totalbooks, // Number of books read
-        'category': category,
-        'bookID': book!.bk_ID,
-        'listdate': listdate // Category of the books (optional)
-      });
+  final now = DateTime.now();
+  final today = DateTime(now.year, now.month, now.day);
+  final userDocRef = FirebaseFirestore.instance.collection('books_read').doc(user.uid);
+
+  final snapshot = await userDocRef.get();
+  final data = snapshot.data();
+
+  List<Map<String, dynamic>> listDate = [];
+
+  if (data != null && data.containsKey('listdate')) {
+    listDate = (data['listdate'] as List)
+        .map((e) => Map<String, dynamic>.from(e))
+        .toList();
+
+    final index = listDate.indexWhere((element) {
+      final ddate = (element['timestamp'] as Timestamp).toDate();
+      final ddateOnly = DateTime(ddate.year, ddate.month, ddate.day);
+      return ddateOnly == today;
+    });
+
+    if (index != -1) {
+      listDate[index]['booksRead'] += booksRead;
     } else {
-      // Add a new document to the "books_read" collection
-
-      await FirebaseFirestore.instance
-          .collection('books_read')
-          .doc(_auth.currentUser!.uid)
-          .set({
-        'timestamp':
-            Timestamp.fromDate(now), // Store the current time as timestamp
-        'booksRead': Totalbooks, // Number of books read
-        'category': category,
-        'bookID': book!.bk_ID,
-        'listdate': [
-          {'timestamp': Timestamp.fromDate(now), 'booksRead': booksRead}
-        ]
-        // Category of the books (optional)
+      listDate.add({
+        'timestamp': Timestamp.fromDate(now),
+        'booksRead': booksRead,
       });
     }
-
-    print("Book read data added!");
+  } else {
+    // First-time user or empty list
+    listDate = [
+      {
+        'timestamp': Timestamp.fromDate(now),
+        'booksRead': booksRead,
+      }
+    ];
   }
+
+  await userDocRef.set({
+    'timestamp': Timestamp.fromDate(now),
+    'booksRead': totalBooks,
+    'category': category,
+    'bookID': book!.bk_ID,
+    'listdate': listDate,
+  });
+
+  print("📚 Book read data updated successfully.");
+}
+
 
   // ignore: always_declare_return_types, inference_failure_on_function_return_type
   initHiveStorage(Book? book) async {
@@ -170,17 +274,17 @@ class _BookDetailPageState extends State<BookDetailPage>
   }
 
   void ScreenShotDisabled() async {
-    (Platform.isAndroid)
-        ? await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE)
-        : "";
+    // (Platform.isAndroid)
+    //     ? await FlutterWindowManager.addFlags(FlutterWindowManager.FLAG_SECURE)
+    //     : "";
   }
 
   @override
   void dispose() {
     t.cancel();
-    (Platform.isAndroid)
-        ? FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE)
-        : "";
+    // (Platform.isAndroid)
+    //     ? FlutterWindowManager.clearFlags(FlutterWindowManager.FLAG_SECURE)
+    //     : "";
 
     super.dispose();
   }
@@ -285,13 +389,13 @@ class _BookDetailPageState extends State<BookDetailPage>
                       ]);
                     } else {
                       Get.snackbar(
-                        LanguageStatus == 'en' ? 'Alert' : 'تنبيه',
+                        LanguageStatus == 'en' ? 'Notice' : 'ملاحظة',
                         LanguageStatus == 'en'
-                            ? 'No Audio For this book'
-                            : 'لا يوجد تسجيل صوتي لهذا الكتاب',
+                            ? 'Sorry, this book doesn’t have an audio version.'
+                            : 'عذراً، لا يتوفر تسجيل صوتي لهذا الكتاب.',
                         colorText: Colors.white,
                         backgroundColor: Colors.redAccent,
-                        icon: const Icon(Icons.audio_file),
+                        icon: const Icon(Icons.volume_off, color: Colors.white),
                       );
                     }
                     //********************** End Open Screen Audio **************//
@@ -356,31 +460,38 @@ class _BookDetailPageState extends State<BookDetailPage>
                 ),
               ])),
       body: NestedScrollView(
-        body: Stack(children: [
-          //  if (_showAppbar) buildAppBar(context) else const SizedBox(),
-          buildMainSection(
-            context,
-            child: Column(
-              children: [
-                if (_showAppbar) buildAppBar(context) else const SizedBox(),
-                const SizedBox(height: 50),
-                buildBookImagePriceAndCounter(theme),
-                const SizedBox(height: 30),
-                buildBookName(theme),
-                const SizedBox(height: 5),
-                buildraking(theme),
-                // const SizedBox(height: 5),
-                // buildFinishid(theme),
-                //buildBookIngredients(theme),
-                const SizedBox(height: 5),
-                buildBookAutho(theme),
-                const SizedBox(height: 10),
-                buildBookTab(theme),
-              ],
-            ),
-          ),
-        ] // buildButtonAddToCart(theme),
-            ),
+        body: isLoodserch
+            ? Stack(children: [
+                //  if (_showAppbar) buildAppBar(context) else const SizedBox(),
+                buildMainSection(
+                  context,
+                  child: Column(
+                    children: [
+                      if (_showAppbar)
+                        buildAppBar(context)
+                      else
+                        const SizedBox(),
+                      const SizedBox(height: 50),
+                      buildBookImagePriceAndCounter(theme),
+                      const SizedBox(height: 30),
+                      buildBookName(theme),
+                      const SizedBox(height: 5),
+                      buildraking(theme),
+                      // const SizedBox(height: 5),
+                      // buildFinishid(theme),
+                      //buildBookIngredients(theme),
+                      const SizedBox(height: 5),
+                      buildBookAutho(theme),
+                      const SizedBox(height: 10),
+                      buildBookTab(theme),
+                    ],
+                  ),
+                ),
+              ] // buildButtonAddToCart(theme),
+                )
+            : Center(
+                child: CircularProgressIndicator(),
+              ),
         headerSliverBuilder: (BuildContext context, bool innerBoxIsScrolled) {
           return [
             SliverAppBar(
@@ -667,7 +778,16 @@ class _BookDetailPageState extends State<BookDetailPage>
                       data: LanguageStatus == 'ar'
                           ? book!.bk_Introduction_Ar!
                           : book!.bk_Introduction!,
-                   ),
+                      style: {
+                        "body": Style(
+                          lineHeight: LineHeight(1.5),
+                          fontSize: FontSize(15.0),
+                          fontWeight: FontWeight.bold,
+                          fontFamily:
+                              LanguageStatus == 'ar' ? 'NotoSansArabic' : null,
+                        ),
+                      },
+                    ),
                     // Text(
                     //     LanguageStatus == 'ar'
                     //         ? book!.bk_Introduction_Ar!
@@ -714,11 +834,20 @@ class _BookDetailPageState extends State<BookDetailPage>
                               fontSize: 23, fontWeight: FontWeight.w500)),
                       children: <Widget>[
                         Html(
-                      data:
-                      LanguageStatus == 'ar'
-                                ? book!.bk_Summary_Ar!.replaceAll(":", " ")
-                                : book!.bk_Summary!,
-                      )
+                          data: LanguageStatus == 'ar'
+                              ? book!.bk_Summary_Ar!.replaceAll(":", " ")
+                              : book!.bk_Summary!,
+                          style: {
+                            "body": Style(
+                              lineHeight: LineHeight(1.5),
+                              fontSize: FontSize(15.0),
+                              fontWeight: FontWeight.bold,
+                              fontFamily: LanguageStatus == 'ar'
+                                  ? 'NotoSansArabic'
+                                  : null,
+                            ),
+                          },
+                        )
                         // Text(
                         //     LanguageStatus == 'ar'
                         //         ? book!.bk_Summary_Ar!.replaceAll(":", " ")
@@ -764,12 +893,22 @@ class _BookDetailPageState extends State<BookDetailPage>
                       style: theme.textTheme.headlineLarge!
                           .copyWith(fontSize: 23, fontWeight: FontWeight.w500)),
                   children: [
-                     Html(
+                    Html(
                       data: book!.genres[0]['gn_Title'] == 'Fiction'
-                            ? LanguageStatus == 'ar'
-                                ? book!.bk_Characters_Ar!
-                                : book!.bk_Characters!
-                            : '',),
+                          ? LanguageStatus == 'ar'
+                              ? book!.bk_Characters_Ar!
+                              : book!.bk_Characters!
+                          : '',
+                      style: {
+                        "body": Style(
+                          lineHeight: LineHeight(1.5),
+                          fontSize: FontSize(15.0),
+                          fontWeight: FontWeight.bold,
+                          fontFamily:
+                              LanguageStatus == 'ar' ? 'NotoSansArabic' : null,
+                        ),
+                      },
+                    ),
                     // Text(
                     //     book!.genres[0]['gn_Title'] == 'Fiction'
                     //         ? LanguageStatus == 'ar'

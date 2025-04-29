@@ -11,6 +11,7 @@ import 'package:ejazapp/pages/for_you/recommended.dart';
 import 'package:ejazapp/pages/home/groupes/my_groupes.dart';
 import 'package:ejazapp/pages/home/self_developement/self_developement.dart';
 import 'package:ejazapp/pages/view_all/all_item.dart';
+import 'package:ejazapp/pages/view_all/trendbooks.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/widgets/LoadingListPage.dart';
@@ -76,20 +77,13 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
       }
     });
 
-    //books = mockBookList;
-    // Future.delayed(Duration.zero, () async {
-    //   Provider.of<BooksApi>(context, listen: false).getBooks();
-    //   Provider.of<BooksApi>(context, listen: false).getCategory();
-    //   Provider.of<BooksApi>(context, listen: false).getAuthors();
-    // });
     init();
     // Show the popup after 5 seconds
     _popupTimer = Timer(Duration(seconds: 5), () {
       var data = mybox!.get('category');
-      if( data ==null || data.length==0 ){ 
+      if (data == null || data.length == 0) {
         showPreferencePopup(context);
-        }
-     
+      }
     });
     // context.read<LocaleProvider>().initState();
   }
@@ -100,34 +94,21 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     });
   }
 
-  void searchBook(String query) {
-    final localprovider = Provider.of<LocaleProvider>(context, listen: false);
-    final books = mockBookList.where((book) {
-      final titleLower = localprovider.localelang!.languageCode == 'en'
-          ? book.bk_Name!.toLowerCase()
-          : book.bk_Name_Ar!.toLowerCase();
-      // Extract author names based on language and convert to lowercase
-      final authorLower = book.authors.map((author) {
-        // Safely extract author name based on the language
-        final name = localprovider.localelang!.languageCode == 'en'
-            ? (author['at_Name'] ?? '').toString()
-            : (author['at_Name_Ar'] ?? '').toString();
-        return name.toLowerCase();
-      }).join(' '); // Combine all author names
-      final searchLower = query.toLowerCase();
-
-      return titleLower.contains(searchLower) ||
-          authorLower.contains(searchLower);
-    }).toList();
+  void searchBook(String query) async {
+    final queryParam =
+        Uri.encodeComponent(query); // Encode query to handle spaces
+    setState(() {
+      this.query = query;
+    });
+    // Construct API URL to search by title and author
+    final booksApi = Provider.of<BooksApi>(context, listen: false);
+    await booksApi.searchBookQuery(queryParam);
 
     setState(() {
       this.query = query;
-      this.books = books;
+      this.books = booksApi.booksQuery;
     });
-
- 
   }
- 
 
   Widget buildSearch() => SearchWidget(
         text: query,
@@ -299,10 +280,6 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                       ),
                                     ),
                                   )
-                                // const Icon(
-                                //     Feather.chevrons_right,
-                                //     color: ColorLight.primary,
-                                //   )
                                 : Padding(
                                     padding: const EdgeInsets.only(top: 8.0),
                                     child: const Text(
@@ -313,10 +290,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     ),
                                   ),
                             onTap: () {
-                              Get.toNamed<dynamic>(
-                                Routes.allitem,
-                                arguments: ['', 'lastbook', ''],
-                              );
+                              Get.toNamed<dynamic>(Routes.fetchallbooks,
+                                  arguments: ['', 'lastbook', '']);
                             },
                           ),
                           const RecommendedExplore(),
@@ -348,7 +323,7 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             onTap: () {
                               Get.toNamed<dynamic>(
                                 Routes.allitem,
-                                arguments: [RecentlyAdded, 'explore', ''],
+                                arguments: [LastBooks, 'explore', ''],
                               );
                             },
                           ),
@@ -357,143 +332,19 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                             width: double.infinity,
                             height: 270,
                             child: ListView.builder(
-                              itemCount: RecentlyAdded.isEmpty
-                                  ? mockBookList.length
-                                  : RecentlyAdded.length,
+                              itemCount: LastBooks.length,
                               scrollDirection: Axis.horizontal,
                               physics: const BouncingScrollPhysics(),
                               shrinkWrap: true,
                               padding:
                                   const EdgeInsets.only(left: Const.margin),
                               itemBuilder: (context, index) {
-                                final book = RecentlyAdded.isEmpty
-                                    ? mockBookList[index]
-                                    : RecentlyAdded[index];
+                                final book = LastBooks[index];
                                 return BookCard(book: book);
                               },
                             ),
                           ),
-                          //const SizedBox(height: 20),
-                          // Padding(
-                          //   padding: const EdgeInsets.only(
-                          //     left: Const.margin,
-                          //     right: Const.margin,
-                          //   ),
-                          //   child: Column(
-                          //     children: [
-                          //       Container(
-                          //         decoration: BoxDecoration(
-                          //           borderRadius:
-                          //               BorderRadius.all(Radius.circular(10)),
-                          //           image: DecorationImage(
-                          //             image: CachedNetworkImageProvider(
-                          //                 'https://firebasestorage.googleapis.com/v0/b/ejaz-ca748.appspot.com/o/1500-1000.png?alt=media&token=e5488ba0-a4d3-4bec-92a8-d4d8f9da5832'), //AssetImage(Const.cardexplore),//https://firebasestorage.googleapis.com/v0/b/ejaz-ca748.appspot.com/o/2148320483.jpg?alt=media&token=dd72c589-e224-4c07-a714-9749ed66736b
-                          //             fit: BoxFit.cover,
-                          //           ),
-                          //         ),
-                          //         height: height * 0.3,
-                          //         width: double.infinity,
-                          //         child: Card(
-                          //           elevation: 0,
-                          //           shape: const RoundedRectangleBorder(
-                          //             borderRadius:
-                          //                 BorderRadius.all(Radius.circular(10)),
-                          //           ),
-                          //           color: Colors.transparent,
-                          //           child: Column(
-                          //             mainAxisSize: MainAxisSize.min,
-                          //             crossAxisAlignment:
-                          //                 CrossAxisAlignment.start,
-                          //             children: <Widget>[
-                          //               SizedBox(
-                          //                   child: Column(
-                          //                 children: [
-                          //                   Padding(
-                          //                     padding: EdgeInsets.only(
-                          //                         top: 40.0,
-                          //                         left: width * 0.2,
-                          //                         right: width * 0.1),
-                          //                     child: Center(
-                          //                       child: Text(
-                          //                         AppLocalizations.of(context)!
-                          //                             .gift_ejaz_for,
-                          //                         maxLines: 2,
-                          //                         style: const TextStyle(
-                          //                           fontStyle: FontStyle.normal,
-                          //                           fontSize: 14,
-                          //                           height: 1.2,
-                          //                           color: Colors.white,
-                          //                           fontWeight: FontWeight.w300,
-                          //                         ),
-                          //                       ),
-                          //                     ),
-                          //                   ),
-                          //                   Padding(
-                          //                     padding: EdgeInsets.only(
-                          //                         top: 40.0,
-                          //                         left: width * 0.2,
-                          //                         right: width * 0.1),
-                          //                     child: Center(
-                          //                       child: Text(
-                          //                         AppLocalizations.of(context)!
-                          //                             .you_can_gift_ejaz,
-                          //                         maxLines: 2,
-                          //                         style: const TextStyle(
-                          //                           fontStyle: FontStyle.normal,
-                          //                           letterSpacing: 0,
-                          //                           wordSpacing: 1,
-                          //                           height: 1.2,
-                          //                           fontSize: 18,
-                          //                           color: Colors.white,
-                          //                           fontWeight: FontWeight.w500,
-                          //                         ),
-                          //                       ),
-                          //                     ),
-                          //                   ),
-                          //                 ],
-                          //               )),
-                          //               SizedBox(
-                          //                 height: 50,
-                          //               ),
-                          //               Column(
-                          //                 children: [
-                          //                   Row(
-                          //                     mainAxisAlignment:
-                          //                         MainAxisAlignment
-                          //                             .spaceBetween,
-                          //                     children: [
-                          //                       const Text(''),
-                          //                       if (localeProv.localelang!
-                          //                               .languageCode ==
-                          //                           'ar')
-                          //                         const Text(''),
-                          //                       MyRaisedButton(
-                          //                         color: Colors.white,
-                          //                         width: width * 0.35,
-                          //                         onTap: OpenApp,
-                          //                         label: AppLocalizations.of(
-                          //                           context,
-                          //                         )!
-                          //                             .gift_ejaz,
-                          //                         labelColor:
-                          //                             const Color(0xFF11034C),
-                          //                       ),
-                          //                       const Text(''),
-                          //                       const Text(''),
-                          //                     ],
-                          //                   ),
-                          //                 ],
-                          //               ),
-                          //               const SizedBox(
-                          //                 height: 10,
-                          //               ),
-                          //             ],
-                          //           ),
-                          //         ),
-                          //       ),
-                          //     ],
-                          //   ),
-                          // ),
+
                           const SizedBox(
                             height: 30,
                           ),
@@ -525,15 +376,10 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                     ),
                                   ),
                             onTap: () {
-                              Get.toNamed<dynamic>(
-                                Routes.allitem,
-                                arguments: ['', 'lastbook', ''],
-                              );
+                              Get.toNamed(Routes.trendbooks);
                             },
                           ),
-                          const SelfDevelopent(
-                            category: '',
-                          ),
+                          const ListTrendBooks(),
                           // const SizedBox(height: 20),
                           // const BecomeMenber(),
                           const SizedBox(height: 20),
@@ -572,24 +418,26 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                       title: category,
                                       style: theme.textTheme.headlineLarge,
                                       trailing: _icon == 'en'
-                                ? Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: const Text(
-                                      "View All",
-                                      style: TextStyle(
-                                        color: ColorLight.primary,
-                                      ),
-                                    ),
-                                  )
-                                : Padding(
-                                    padding: const EdgeInsets.only(top: 8.0),
-                                    child: const Text(
-                                      "عرض الكل",
-                                      style: TextStyle(
-                                        color: ColorLight.primary,
-                                      ),
-                                    ),
-                                  ),
+                                          ? Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 8.0),
+                                              child: const Text(
+                                                "View All",
+                                                style: TextStyle(
+                                                  color: ColorLight.primary,
+                                                ),
+                                              ),
+                                            )
+                                          : Padding(
+                                              padding: const EdgeInsets.only(
+                                                  top: 8.0),
+                                              child: const Text(
+                                                "عرض الكل",
+                                                style: TextStyle(
+                                                  color: ColorLight.primary,
+                                                ),
+                                              ),
+                                            ),
                                       onTap: () {
                                         CategoryL? catSelect;
                                         for (var i = 0;
@@ -609,7 +457,8 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                                       },
                                     ),
                                     const SizedBox(height: 5),
-                                    ListFilterCategory(category: category),
+                                    ListFilterCategoryForyou(
+                                        category: category),
                                   ],
                                 );
                               },
@@ -625,6 +474,9 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
                   child: ListView.builder(
                     itemCount: books.length,
                     itemBuilder: (context, index) {
+                      if (index == books.length) {
+                        return Center(child: CircularProgressIndicator());
+                      }
                       final book = books[index];
 
                       return buildBook(book);
@@ -652,32 +504,41 @@ class _ExploreState extends State<Explore> with SingleTickerProviderStateMixin {
     final themeProv = Provider.of<ThemeProvider>(context);
     return InkWell(
       onTap: () {
-        if (book.bk_trial! != true) {
-          PaymentDo(context);
-          return;
-        }
+        // if (book.bk_trial! != true) {
+        //   PaymentDo(context);
+        //   return;
+        // }
         Get.toNamed<dynamic>(
           Routes.bookdetail,
-          arguments: [book, '', localprovider.localelang!.languageCode],
+          arguments: [
+            book,
+            '',
+            localprovider.localelang!.languageCode,
+            "search"
+          ],
         );
       },
       child: ListTile(
-        leading: Padding(
-          padding: const EdgeInsets.all(2),
-          child: ClipRRect(
-            borderRadius: BorderRadius.circular(8.0),
-            child: Image.network(
-              book.imagePath,
-              fit: BoxFit.contain,
-              width: 70,
-              height: 70,
+        leading: SizedBox(
+          width: 70,
+          height: 70,
+          child: Padding(
+            padding: const EdgeInsets.all(2),
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(8.0),
+              child: Image.network(
+                book.url != null ? book.url! : "",
+                fit: BoxFit.contain,
+                width: 70,
+                height: 70,
+              ),
             ),
           ),
         ),
         title: Text(
           localprovider.localelang!.languageCode == 'en'
-              ? book.bk_Name!
-              : book.bk_Name_Ar!,
+              ? book.bk_Title!
+              : book.bk_Title_Ar!,
           style: TextStyle(
             height: 1.3,
             color: themeProv.isDarkTheme! ? Colors.white : ColorDark.background,

@@ -1,0 +1,20 @@
+{
+  "buildFiles": [
+    "/Users/whsini/development/flutter/packages/flutter_tools/gradle/src/main/groovy/CMakeLists.txt"
+  ],
+  "cleanCommandsComponents": [
+    [
+      "/Users/whsini/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+      "-C",
+      "/Users/whsini/ejazapp/android/app/.cxx/RelWithDebInfo/3s3m1e25/x86_64",
+      "clean"
+    ]
+  ],
+  "buildTargetsCommandComponents": [
+    "/Users/whsini/Library/Android/sdk/cmake/3.22.1/bin/ninja",
+    "-C",
+    "/Users/whsini/ejazapp/android/app/.cxx/RelWithDebInfo/3s3m1e25/x86_64",
+    "{LIST_OF_TARGETS_TO_BUILD}"
+  ],
+  "libraries": {}
+}

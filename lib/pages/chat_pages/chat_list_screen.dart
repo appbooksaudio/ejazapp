@@ -1,15 +1,13 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:ejazapp/helpers/colors.dart';
-
 import 'package:ejazapp/pages/chat_pages/util.dart';
 import 'package:ejazapp/widgets/chat_list/chat_list_tile.dart';
 import 'package:ejazapp/widgets/search_widget.dart';
-
 import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
-
 import 'package:flutter_firebase_chat_core/flutter_firebase_chat_core.dart';
 import 'package:flutter_chat_types/flutter_chat_types.dart' as types;
-import 'package:firebase_auth/firebase_auth.dart' ;
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:get/get.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:provider/provider.dart';
@@ -29,31 +27,12 @@ class ChatListScreen extends StatefulWidget {
 
 class _ChatListScreenState extends State<ChatListScreen> {
   int chatCategoryCurrentIndex = 1;
-   List<types.User> allUserIds=[];
+  List<types.User> allUserIds = [];
+  List<types.User> _filteredUsers = [];
+  String _searchQuery = '';
+  bool _isFilteringUnread = false;
   User? _user;
   bool _error = false;
-  Widget _buildAvatar(types.User user) {
-    final color = getUserAvatarNameColor(user);
-    final hasImage = user.imageUrl != null;
-    final name = getUserName(user);
-
-    return Container(
-      margin: const EdgeInsets.only(
-        right: 16,
-      ),
-      child: CircleAvatar(
-        backgroundColor: hasImage ? Colors.transparent : color,
-        backgroundImage: hasImage ? NetworkImage(user.imageUrl!) : null,
-        radius: 20,
-        child: !hasImage
-            ? Text(
-                name.isEmpty ? '' : name[0].toUpperCase(),
-                style: const TextStyle(color: Colors.white),
-              )
-            : null,
-      ),
-    );
-  }
 
   @override
   void initState() {
@@ -77,10 +56,8 @@ class _ChatListScreenState extends State<ChatListScreen> {
 
   void _handlePressed(types.User otherUser, BuildContext context) async {
     if (_user!.displayName != null) {
-      final navigator = Navigator.of(context);
       final room = await FirebaseChatCore.instance.createRoom(otherUser);
-      Get.toNamed(Routes.roomChat,arguments: [room,_user]);
-     
+      Get.toNamed(Routes.roomChat, arguments: [room, _user]);
     } else {
       await showDialog<dynamic>(
         context: context,
@@ -99,9 +76,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
               style: theme.textTheme.headlineSmall,
             ),
             content: Text(
-              // AppLocalizations.of(context)!
-              //     .if_you_select_log_out_it_will_return_to_the_login_screen,
-              'If you want contuine chat with users,please sign in with google ',
+              'If you want continue chat with users, please sign in with Google',
               textAlign: TextAlign.center,
               style: theme.textTheme.bodyLarge,
             ),
@@ -110,7 +85,6 @@ class _ChatListScreenState extends State<ChatListScreen> {
                 onPressed: () async {
                   Get.offAllNamed<dynamic>(Routes.signin);
                   await GoogleSignIn().signOut();
-                  //  await ;
                   SharedPreferences sharedPreferences =
                       await SharedPreferences.getInstance();
                   sharedPreferences.setString("token", "");
@@ -137,26 +111,43 @@ class _ChatListScreenState extends State<ChatListScreen> {
     }
   }
 
+  Future<void> filterLastMessages() async {
+    final querySnapshot = await FirebaseFirestore.instance
+        .collection('chats')
+        .where('hasUnread', isEqualTo: true)
+        .get();
+
+    List<types.User> filteredUsers = [];
+
+    for (var doc in querySnapshot.docs) {
+      final userId = doc.id;
+      final user = allUserIds.firstWhereOrNull((user) => user.id == userId);
+      if (user != null) {
+        filteredUsers.add(user);
+      }
+    }
+
+    setState(() {
+      _filteredUsers = filteredUsers;
+      _isFilteringUnread = true;
+      print('State updated with ${_filteredUsers.length} users');
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
-   
     final themeProv = Provider.of<ThemeProvider>(context);
     final theme = Theme.of(context);
-
     Color dividerColor = (themeProv.isDarkTheme ?? false)
         ? ColorDark.divider
         : ColorLight.divider;
-
     final locale = AppLocalizations.of(context)!;
-    final size = MediaQuery.of(context).size;
 
     return Scaffold(
       body: SafeArea(
         child: Column(
           children: [
-            SizedBox(
-              height: 16,
-            ),
+            const SizedBox(height: 16),
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 15),
               child: Column(
@@ -168,82 +159,79 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         child: Icon(Icons.more_horiz),
                         action: () {
                           showMenu(
-                              color: theme.cardColor,
-                              context: context,
-                              position: RelativeRect.fromLTRB(76, 16, 76, 0),
-                              items: List.generate(
-                                5,
-                                (index) => PopupMenuItem(
-                                    child: Text(
+                            color: theme.cardColor,
+                            context: context,
+                            position: RelativeRect.fromLTRB(76, 16, 76, 0),
+                            items: List.generate(
+                              5,
+                              (index) => PopupMenuItem(
+                                child: Text(
                                   'Text $index',
                                   style: theme.textTheme.titleMedium,
-                                )),
-                              ));
+                                ),
+                              ),
+                            ),
+                          );
                         },
                       ),
                       const Spacer(),
                       SquareButton(
-                         action:(){},
-                          child: Icon(
-                        CupertinoIcons.archivebox_fill,
-                      )),
-                      const SizedBox(
-                        width: 12,
+                        action: () {},
+                        child: Icon(CupertinoIcons.archivebox_fill),
                       ),
+                      const SizedBox(width: 12),
                       SquareButton(
-                        action:(){},
-                        child: Icon(CupertinoIcons.camera_fill)),
-                      const SizedBox(
-                        width: 12,
+                        action: () {},
+                        child: Icon(CupertinoIcons.camera_fill),
                       ),
+                      const SizedBox(width: 12),
                       SquareButton(
-                        action:(){
-                          
-                          Get.toNamed(Routes.creategroup,arguments: allUserIds);
+                        action: () {
+                          Get.toNamed(Routes.creategroup,
+                              arguments: allUserIds);
                         },
-                        child: Icon(
-                          Icons.add,
-                          color: Colors.white,
-                        ),
+                        child: Icon(Icons.add, color: Colors.white),
                         backGroundColor: theme.primaryColor,
-                      )
+                      ),
                     ],
                   ),
-                  const SizedBox(
-                    height: 24,
-                  ),
+                  const SizedBox(height: 24),
                   Text(
                     locale.ejazChat,
-                    style: theme.textTheme.headlineMedium?.copyWith(fontSize: 20),
+                    style:
+                        theme.textTheme.headlineMedium?.copyWith(fontSize: 20),
                   ),
-                  const SizedBox(
-                    height: 16,
-                  ),
+                  const SizedBox(height: 16),
                   Container(
-                      height: 50,
-                      width: double.infinity,
-                      decoration: BoxDecoration(
-                        color: theme.cardColor,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Row(
-                        children: [
-                          SizedBox(
-                            width: 16,
+                    height: 50,
+                    width: double.infinity,
+                    decoration: BoxDecoration(
+                      color: theme.cardColor,
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: SearchWidget(
+                            text: _searchQuery,
+                            onChanged: (value) {
+                              setState(() {
+                                _searchQuery = value.toLowerCase();
+                                _filteredUsers = allUserIds.where((user) {
+                                  final name = getUserName(user).toLowerCase();
+                                  return name.contains(_searchQuery);
+                                }).toList();
+                              });
+                            },
+                            hintText: locale.searchuser,
                           ),
-                          Expanded(
-                            child: SearchWidget(
-                                text: '',
-                                onChanged: (value) {},
-                                hintText: locale.search),
-                          ),
-                        ],
-                      )),
-                  const SizedBox(
-                    height: 16,
+                        ),
+                      ],
+                    ),
                   ),
+                  const SizedBox(height: 16),
                   Row(
-                    //spacing: 12,
                     children: [
                       ChatCategoryButton(
                         text: locale.allChat,
@@ -251,6 +239,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                         action: () {
                           setState(() {
                             chatCategoryCurrentIndex = 1;
+                            _filteredUsers = allUserIds; // Reset filter
                           });
                         },
                       ),
@@ -261,6 +250,7 @@ class _ChatListScreenState extends State<ChatListScreen> {
                           setState(() {
                             chatCategoryCurrentIndex = 2;
                           });
+                          filterLastMessages(); // Filter unread chats
                         },
                       ),
                       ChatCategoryButton(
@@ -271,62 +261,63 @@ class _ChatListScreenState extends State<ChatListScreen> {
                             chatCategoryCurrentIndex = 3;
                           });
                         },
-                      )
+                      ),
                     ],
                   ),
                 ],
               ),
             ),
-            SizedBox(
-              height: 16,
-            ),
+            const SizedBox(height: 16),
             Expanded(
-                child: StreamBuilder<List<types.User>>(
-              stream: FirebaseChatCore.instance.users(),
-              initialData: const [],
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.isEmpty) {
+              child: StreamBuilder<List<types.User>>(
+                stream: FirebaseChatCore.instance.users(),
+                initialData: const [],
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    return Container(
+                      alignment: Alignment.center,
+                      margin: const EdgeInsets.only(bottom: 200),
+                      child: const Text('No users'),
+                    );
+                  }
+
+                  allUserIds = snapshot.data!;
+                  final usersToShow = _searchQuery.isNotEmpty
+                      ? _filteredUsers
+                      : (_isFilteringUnread ? _filteredUsers : allUserIds);
+
                   return Container(
-                    alignment: Alignment.center,
-                    margin: const EdgeInsets.only(
-                      bottom: 200,
-                    ),
-                    child: const Text('No users'),
-                  );
-                }
-               allUserIds=snapshot.data!;
-               print("allUserIds ${allUserIds}");
-                return Container(
                     width: double.infinity,
                     color: theme.cardColor,
                     child: ListView.separated(
-                      padding: EdgeInsets.symmetric(
-                        vertical: 0,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 0),
                       itemBuilder: (context, index) {
-                        final user = snapshot.data![index];
-                        
+                        final user = usersToShow[index];
                         return InkWell(
-                            onTap: () {
-                              _handlePressed(user, context);
-                            },
-                            child: Padding(
-                              padding: const EdgeInsets.all(10.0),
-                              child: ChatListTile(
-                                index: index,
-                                user: user,
-                              ),
-                            ));
+                          onTap: () {
+                            _handlePressed(user, context);
+                          },
+                          child: Padding(
+                            padding: const EdgeInsets.all(10.0),
+                            child: ChatListTile(
+                              index: index,
+                              user: user,
+                            ),
+                          ),
+                        );
                       },
                       separatorBuilder: (context, index) =>
-                          Container(height: 1, color: dividerColor),
-                      itemCount: snapshot.data!.length,
-                    ));
-              },
-            )),
+                          Container(height: 0, color: dividerColor),
+                      itemCount: usersToShow.length,
+                    ),
+                  );
+                },
+              ),
+            ),
           ],
         ),
       ),

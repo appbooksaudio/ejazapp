@@ -1,7 +1,7 @@
 {
-  "id": [
+  "ar": [
     "enter_password",
-    "follow_your_favorites",
-    "find_and_attend"
+    "privacy_policy_two",
+    "formation_to_us_then_two"
   ]
 }

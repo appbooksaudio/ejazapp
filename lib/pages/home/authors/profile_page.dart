@@ -41,7 +41,9 @@ class _AuthorsPageState extends State<AuthorsPage> {
       loading = true;
       print("loading $loading");
     });
-    await BooksApi().getAuthorsbyCollections(authors.at_ID);
+      final booksApi = Provider.of<BooksApi>(context, listen: false);
+    await booksApi.getAuthorsbyCollections(authors.at_ID);
+    await booksApi.getBooksByAuthors(authors.at_ID);
     setState(() {
       loading = false;
       print("loading $loading");
@@ -225,22 +227,26 @@ class _AuthorsPageState extends State<AuthorsPage> {
                               top: BorderSide(color: Colors.grey, width: 0.5))),
                       child: TabBarView(children: <Widget>[
                         buildAbout(authors!),
-                        ListView.builder(
-                          itemCount: ListBookAut.length,
-                          shrinkWrap: true,
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: Const.margin,
-                            vertical: 15,
-                          ),
-                          physics: const ScrollPhysics(),
-                          itemBuilder: (context, index) {
-                            final Book book;
-                            // ignore: avoid_dynamic_calls, curly_braces_in_flow_control_structures
+                        Consumer<BooksApi>(
+                          builder: (context, booksApi, child) {
+                            return ListView.builder(
+                              itemCount: booksApi.getbooksbyauthors.length,
+                              shrinkWrap: true,
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: Const.margin,
+                                vertical: 15,
+                              ),
+                              physics: const ScrollPhysics(),
+                              itemBuilder: (context, index) {
+                                final Book book;
+                                // ignore: avoid_dynamic_calls, curly_braces_in_flow_control_structures
 
-                            book = ListBookAut[index];
-                            return BookVerticalCard(
-                              book: book,
-                              file: "",
+                                book = booksApi.getbooksbyauthors[index];
+                                return BookVerticalCard(
+                                  book: book,
+                                  file: "",
+                                );
+                              },
                             );
                           },
                         ),
