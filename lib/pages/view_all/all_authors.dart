@@ -63,7 +63,7 @@
 //     }
 
 //     final Uri url = Uri.parse(
-//         "https://ejaz.applab.qa/api/ejaz/v1/Author/getAuthors/?Status=active&PageSize=$page&PageNumber=$pageNumber&OrderBy=title&OrderAs=DESC");
+//         "https://getejaz.com/api/ejaz/v1/Author/getAuthors/?Status=active&PageSize=$page&PageNumber=$pageNumber&OrderBy=title&OrderAs=DESC");
 
 //     try {
 //       final response = await http
@@ -82,7 +82,7 @@
 //             at_Name: obj['at_Name'] as String,
 //             at_Name_Ar: obj['at_Name_Ar'] as String,
 //             imagePath:
-//                 'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+//                 'https://getejaz.com/api/ejaz/v1/Medium/getImage/$image',
 //             at_Active: obj['at_Active'] as bool,
 //             at_Desc: obj['at_Desc'] as String,
 //             at_Desc_Ar: obj['at_Desc_Ar'] as String,

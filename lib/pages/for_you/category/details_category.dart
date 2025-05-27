@@ -49,7 +49,7 @@ class _CategoryPageState extends State<CategoryPage>
     };
 
     final url = Uri.parse(
-      'https://ejaz.applab.qa/api/ejaz/v1/Book/getBookByCategory/$categoryID/?Status=active&OrderBy=Title&OrderAs=DESC',
+      'https://getejaz.com/api/ejaz/v1/Book/getBookByCategory/$categoryID/?Status=active&OrderBy=Title&OrderAs=DESC',
     );
 
     try {

@@ -7,7 +7,8 @@ import 'package:image_picker/image_picker.dart';
 import 'package:provider/provider.dart';
 import '../../providers/theme_provider.dart';
 import '../rectangularButton.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 
 class MessageSendingSection extends StatefulWidget {
   const MessageSendingSection({

@@ -11,7 +11,7 @@ Future<bool> alertExitApp() {
       actions: [
         ElevatedButton(
             style: ButtonStyle(
-                backgroundColor: WidgetStateProperty.all(Colors.lightBlue)),
+                backgroundColor: MaterialStateProperty.all(Colors.lightBlue)),
             onPressed: () {
               exit(0);
             },

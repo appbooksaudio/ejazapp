@@ -19,6 +19,7 @@ import 'package:get/get.dart';
 // ignore: depend_on_referenced_packages
 import 'package:http/http.dart' as http;
 import 'package:intl/intl.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:mailer/mailer.dart';
 import 'package:mailer/smtp_server/gmail.dart';
 import 'package:path/path.dart';
@@ -168,7 +169,7 @@ class BooksApi extends ChangeNotifier {
     };
 
     final Uri apiUrl =
-        Uri.parse('https://ejaz.applab.qa/api/ejaz/v1/Counts/getBooksCount');
+        Uri.parse('https://getejaz.com/api/ejaz/v1/Counts/getBooksCount');
 
     try {
       final response = await http
@@ -288,7 +289,7 @@ class BooksApi extends ChangeNotifier {
     };
 
     final Uri apiUrl = Uri.parse(
-        'https://ejaz.applab.qa/api/ejaz/v1/Book/getBookBySearch/0?Search=$query');
+        'https://getejaz.com/api/ejaz/v1/Book/getBookBySearch/0?Search=$query');
 
     try {
       final response = await http
@@ -352,7 +353,7 @@ class BooksApi extends ChangeNotifier {
     };
 
     final Uri apiUrl =
-        Uri.parse('https://ejaz.applab.qa/api/ejaz/v1/Book/getBook/$id');
+        Uri.parse('https://getejaz.com/api/ejaz/v1/Book/getBook/$id');
 
     try {
       final response = await http
@@ -397,7 +398,7 @@ class BooksApi extends ChangeNotifier {
     };
 
     final Uri apiUrl =
-        Uri.parse('https://ejaz.applab.qa/api/ejaz/v1/Book/getBook/$id');
+        Uri.parse('https://getejaz.com/api/ejaz/v1/Book/getBook/$id');
 
     try {
       final response = await http
@@ -645,7 +646,7 @@ class BooksApi extends ChangeNotifier {
               ct_Title_Ar: obj['ct_Title_Ar'] as String,
               id: 0,
               imagePath:
-                  'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+                  'https://getejaz.com/api/ejaz/v1/Medium/getImage/$image',
               md_ID: '',
               title: ''));
           i + 1;
@@ -699,7 +700,7 @@ class BooksApi extends ChangeNotifier {
             at_Name: obj['at_Name'] as String,
             at_Name_Ar: obj['at_Name_Ar'] as String,
             imagePath:
-                'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+                'https://getejaz.com/api/ejaz/v1/Medium/getImage/$image',
             at_Active: obj['at_Active'] as bool,
             at_Desc: obj['at_Desc'] as String,
             at_Desc_Ar: obj['at_Desc_Ar'] as String,
@@ -763,7 +764,7 @@ class BooksApi extends ChangeNotifier {
             bc_Title: obj['bc_Title'] as String,
             bc_Title_Ar: obj['bc_Title_Ar'] as String,
             imagePath:
-                'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+                'https://getejaz.com/api/ejaz/v1/Medium/getImage/$image',
             bc_Active: obj['bc_Active'] as bool,
             bc_Desc: obj['bc_Desc'] as String,
             bc_Summaries: obj['bc_Summaries'] as int,
@@ -870,7 +871,7 @@ class BooksApi extends ChangeNotifier {
             bc_Title: obj['bc_Title'] as String,
             bc_Title_Ar: obj['bc_Title_Ar'] as String,
             imagePath:
-                'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/$image',
+                'https://getejaz.com/api/ejaz/v1/Medium/getImage/$image',
             bc_Active: obj['bc_Active'] as bool,
             bc_Desc: obj['bc_Desc'] as String,
             bc_Summaries: obj['bc_Summaries'] as int,
@@ -914,7 +915,7 @@ class BooksApi extends ChangeNotifier {
 
       // Construct API URL
       final Uri url = Uri.parse(
-          'https://ejaz.applab.qa/api/ejaz/v1/Book/getBookByCollection/$id/?Status=active');
+          'https://getejaz.com/api/ejaz/v1/Book/getBookByCollection/$id/?Status=active');
 
       // Perform API request after navigation
       final response = await http.get(url, headers: requestHeaders);
@@ -1097,8 +1098,7 @@ class BooksApi extends ChangeNotifier {
             'refreshToken', responseBody['refreshToken']);
         await sharedPreferences.setString('image', responseBody['image']);
         await mybox?.put('PaymentStatus', isSubscribed ? 'success' : 'pending');
-        tokenExpiryTime = DateTime.now()
-            .add(Duration(days: 1)); // Adjust based on API response
+        // Adjust based on API response
         // Fetch Firebase token
         final firebaseToken = await FirebaseMessaging.instance.getToken();
         if (firebaseToken != null) {
@@ -1166,8 +1166,7 @@ class BooksApi extends ChangeNotifier {
             'refreshToken', responseBody['refreshToken']);
         await sharedPreferences.setString('image', responseBody['image']);
         await mybox?.put('PaymentStatus', isSubscribed ? 'success' : 'pending');
-        tokenExpiryTime = DateTime.now()
-            .add(Duration(days: 1)); // Adjust based on API response
+         // Adjust based on API response
         // Fetch Firebase token
         final firebaseToken = await FirebaseMessaging.instance.getToken();
         if (firebaseToken != null) {
@@ -1243,8 +1242,7 @@ class BooksApi extends ChangeNotifier {
             'refreshToken', responseBody['refreshToken']);
         await sharedPreferences.setString('image', responseBody['image']);
         await mybox?.put('PaymentStatus', isSubscribed ? 'success' : 'pending');
-        tokenExpiryTime = DateTime.now()
-            .add(Duration(days: 1)); // Adjust based on API response
+      // Adjust based on API response
         // Fetch Firebase token
         final firebaseToken = await FirebaseMessaging.instance.getToken();
         if (firebaseToken != null) {
@@ -1392,7 +1390,7 @@ class BooksApi extends ChangeNotifier {
             bnPublishFrom: obj['bn_PublishFrom'] as String,
             bnPublishTill: obj['bn_PublishTill'] as String,
             imagePath:
-                "https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/${obj['md_ID']}"));
+                "https://getejaz.com/api/ejaz/v1/Medium/getImage/${obj['md_ID']}"));
       });
     } else {
       // throw Exception();
@@ -1400,11 +1398,8 @@ class BooksApi extends ChangeNotifier {
   }
 
 /********************Check if Token is Expired ***************/
-  DateTime? tokenExpiryTime;
-  bool isTokenExpired() {
-    if (tokenExpiryTime == null) return true;
-    return DateTime.now().isAfter(tokenExpiryTime!);
-  }
+  
+  
 
   refreshToken(BuildContext context) async {
     late SharedPreferences sharedPreferences;
@@ -1416,7 +1411,7 @@ class BooksApi extends ChangeNotifier {
     }
     try {
       final response = await http.post(
-        Uri.parse('https://ejaz.applab.qa/api/ejaz/v1/Account/refreshtoken'),
+        Uri.parse('https://getejaz.com/api/ejaz/v1/Account/refreshtoken'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'RefreshToken': YOUR_REFRESH_TOKEN}),
       );
@@ -1431,8 +1426,7 @@ class BooksApi extends ChangeNotifier {
           await sharedPreferences.setString("authorized", newAccessToken);
           print("newAccessToken1 $newAccessToken");
           await sharedPreferences.setString("refreshToken", newRefreshToken);
-          tokenExpiryTime = DateTime.now()
-              .add(Duration(days: 1)); // Adjust based on API response
+          // Adjust based on API response
 
           print("✅ Token refreshed successfully!");
           return;
@@ -1449,11 +1443,13 @@ class BooksApi extends ChangeNotifier {
           responseBody: response.body,
         );
         await handleError(context, errorValue, "refreshToken");
+         Get.toNamed(Routes.signin);
       }
     } catch (error) {
       print("⚠️ Error refreshing token: $error");
       String ErrorValue = "${YOUR_REFRESH_TOKEN},\n${error.toString()}";
       await handleError(context, ErrorValue, "refreshToken");
+       Get.toNamed(Routes.signin);
     }
   }
 

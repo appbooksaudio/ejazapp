@@ -75,7 +75,7 @@ class Const {
   static const String noarrival =
       "https://cdn2.vectorstock.com/i/1000x1000/04/26/no-data-empty-concept-vector-41830426.jpg";
   static const String UrlAu =
-      'https://ejaz.applab.qa/api/ejaz/v1/Medium/getAudio/00000000-0000-0000-0000-000000000000';
+      'https://getejaz.com/api/ejaz/v1/Medium/getAudio/00000000-0000-0000-0000-000000000000';
 
   // Double
   static const double margin = 18;

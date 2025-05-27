@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'package:flutter/material.dart';
 import 'package:ejazapp/controllers/controllerlang.dart';
 import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/helpers/routes.dart';
@@ -7,8 +7,9 @@ import 'package:ejazapp/l10n/l10n.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:ejazapp/widgets/custom_elevated_button.dart';
-import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 import 'package:get/get.dart';
 import 'package:provider/provider.dart';
 
@@ -115,17 +116,10 @@ class _ChangeLanguageState extends State<ChangeLanguage> {
                 child: Column(
                   children: L10n.all.map((locale) {
                     return RadioListTile(
-                       fillColor: WidgetStateColor.resolveWith(
-                        (Set<WidgetState> states) {
-                          if (states.contains(WidgetState.selected)) {
-                            return theme.primaryColor;
-                          }
-                          return Colors.white;
-                        },
-                      ),
                       value: locale,
                       contentPadding: EdgeInsets.zero,
-                      activeColor: theme.primaryColor,
+                      activeColor: Theme.of(context)
+                          .primaryColor, // This sets the selected color
                       title: Align(
                         alignment: Alignment.centerLeft,
                         child: Row(
@@ -133,11 +127,9 @@ class _ChangeLanguageState extends State<ChangeLanguage> {
                           children: [
                             Text(
                               language(locale.languageCode),
-                              style: theme.textTheme.titleMedium,
+                              style: Theme.of(context).textTheme.titleMedium,
                             ),
-                            const SizedBox(
-                              width: 20,
-                            ),
+                            const SizedBox(width: 20),
                             Flag(locale.languageCode),
                           ],
                         ),

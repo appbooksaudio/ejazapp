@@ -62,7 +62,7 @@ class _BooksListScreenState extends State<BooksListScreen> {
     }
 
     final Uri url = Uri.parse(
-        "https://ejaz.applab.qa/api/ejaz/v1/Book/getBooks/?Status=active&PageSize=$page&PageNumber=$pageNumber&OrderBy=title&OrderAs=DESC");
+        "https://getejaz.com/api/ejaz/v1/Book/getBooks/?Status=active&PageSize=$page&PageNumber=$pageNumber&OrderBy=title&OrderAs=DESC");
 
     try {
       final response = await http

@@ -135,7 +135,7 @@ List<GetPage<dynamic>> allPages = [
   GetPage(name: Routes.giftejaz, page: () => const GiftEjaz()),
   GetPage(name: Routes.suggesttejaz, page: () => const SuggestEjaz()),
   GetPage(name: Routes.addpost, page: () => const AddPost()),
-  GetPage(name: Routes.chatai, page: () => const GeminiChat()),
+  // GetPage(name: Routes.chatai, page: () => const GeminiChat()),
   GetPage(
       name: Routes.thankyou,
       page: () => const ThankYouPage(
@@ -162,10 +162,10 @@ List<GetPage<dynamic>> allPages = [
     name: Routes.imageView,
     page: () => ImageScreen(),
   ),
-   GetPage(
-    name: Routes.roomChat,
-    page: () => ChatPage(room:Get.arguments[0],user: Get.arguments[1],),
-  ),
+  //  GetPage(
+  //   name: Routes.roomChat,
+  //   page: () => ChatPage(room:Get.arguments[0],user: Get.arguments[1],),
+  // ),
   GetPage(
     name: Routes.groupchat,
     page: () => GroupChatScreen(groupId: Get.arguments[1],),

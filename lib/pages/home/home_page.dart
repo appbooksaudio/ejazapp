@@ -25,11 +25,13 @@ import 'package:ejazapp/widgets/notification_alert.dart';
 import 'package:ejazapp/widgets/search_widget.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:jwt_decoder/jwt_decoder.dart';
 import 'package:lottie/lottie.dart';
 import 'package:octo_image/octo_image.dart';
 import 'package:path_provider/path_provider.dart';
@@ -47,6 +49,8 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage>
     with SingleTickerProviderStateMixin {
+  bool istokenvalid = false;
+  String? accessToken;
   File? file;
   File? file1;
   String? initialMessage;
@@ -60,53 +64,61 @@ class _HomePageState extends State<HomePage>
   late SharedPreferences prefs;
   String? name;
   @override
- @override
-@override
-void initState() {
-  super.initState();
-  _initializeApp();
-}
+  @override
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
 
-void _initializeApp() async {
-   await _validateToken();
-  // If token is valid, proceed with the rest
-  WidgetsBinding.instance.addPostFrameCallback((_) async {
-    await _fetchData();
-    checkForUpdate(context);
-  });
+  void _initializeApp() async {
+    await _validateToken();
+    // If token is valid, proceed with the rest
+    setState(() {
+      istokenvalid = true;
+    });
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      await _fetchData();
+      checkForUpdate(context);
+    });
 
-  _initializeAppLogic();
-}
+    _initializeAppLogic();
+  }
 
- _validateToken() async {
-  // Replace with your actual token validation logic
-   await isTokenExpired() ;
-}
+  _validateToken() async {
+    // Replace with your actual token validation logic
+    await isTokenExpired();
+  }
 
+  void _initializeAppLogic() {
+    // Other initializations
+    init();
 
+    // Initialize localization
+    context.read<LocaleProvider>().initState();
 
-
-void _initializeAppLogic() {
-  // Other initializations
-  init();
-  
-  // Initialize localization
-  context.read<LocaleProvider>().initState();
-
-  // Initialize Firebase notifications
-  initNotifications();
-}
-
+    // Initialize Firebase notifications
+    initNotifications();
+  }
 
   // Prevents duplicate API calls
+
   isTokenExpired() async {
     final booksApi = Provider.of<BooksApi>(context, listen: false);
+    final prefs = await SharedPreferences.getInstance();
+    accessToken = prefs.getString("authorized");
     // Attempt to refresh the token
-    if (booksApi.isTokenExpired()) {
+    if (isTokenvalid()) {
       // Refresh token before making any API call
       await booksApi.refreshToken(context);
     }
   }
+
+  bool isTokenvalid() {
+    if (accessToken == null) return true;
+    return JwtDecoder.isExpired(accessToken!);
+  }
+
 //****************************Start function _fetchData() :  ************************/
   Future<void> _fetchData() async {
     final booksApi = Provider.of<BooksApi>(context, listen: false);
@@ -420,19 +432,6 @@ void _initializeAppLogic() {
     return books.take(n).toList();
   }
 
-  List<Widget> _homeTabBarList(BuildContext context) => [
-        //  Tab(text: AppLocalizations.of(context)!.all),
-        Tab(text: AppLocalizations.of(context)!.biography),
-        Tab(text: AppLocalizations.of(context)!.business),
-        Tab(text: AppLocalizations.of(context)!.culture),
-        Tab(text: AppLocalizations.of(context)!.health),
-        Tab(text: AppLocalizations.of(context)!.history),
-        Tab(text: AppLocalizations.of(context)!.politics),
-        Tab(text: AppLocalizations.of(context)!.novel),
-        Tab(text: AppLocalizations.of(context)!.science),
-        Tab(text: AppLocalizations.of(context)!.self_developement),
-        Tab(text: AppLocalizations.of(context)!.others),
-      ];
 //**************************** Start of function SearchWidget() : ************************/
   Widget buildSearch() => SearchWidget(
         text: query,
@@ -664,13 +663,16 @@ void _initializeAppLogic() {
       bool isLoading, LocaleProvider localeProvider, ThemeData theme) {
     if (isLoading) return const LoadingListPage();
 // Instantiate BooksApi
-    final BooksApi booksApiController = BooksApi();
+    // Get the controller from provider instead of creating a new instance
+    final booksApiController = Provider.of<BooksApi>(context, listen: false);
     return Column(
       children: [
         const SizedBox(height: 20),
         _buildRecommendedSection(localeProvider, theme),
         const SizedBox(height: 5),
-        HomePageTabBar(controller: booksApiController),
+        istokenvalid != false
+            ? HomePageTabBar(controller: booksApiController)
+            : Center(child: CircularProgressIndicator()),
         const SizedBox(height: 20),
         _buildQuoteSection(theme),
         const SizedBox(height: 30),
@@ -696,7 +698,9 @@ void _initializeAppLogic() {
 
         _buildSelfDevelopmentSection(localeProvider, theme),
         const SizedBox(height: 5),
-        const SelfDevelopent(category: ''),
+        istokenvalid != false
+            ? const SelfDevelopent(category: '')
+            : Center(child: CircularProgressIndicator()),
 
         const SizedBox(height: 10),
         _buildTopAuthorsSection(localeProvider, theme),

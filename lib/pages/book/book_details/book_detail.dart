@@ -18,7 +18,8 @@ import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 import 'package:flutter_html/flutter_html.dart';
 import 'package:flutter_icons/flutter_icons.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
@@ -202,59 +203,59 @@ class _BookDetailPageState extends State<BookDetailPage>
   //   print("Book read data added!");
   // }
   Future<void> addBookRead(
-    String category, int booksRead, int totalBooks) async {
-  final user = FirebaseAuth.instance.currentUser;
-  if (user == null) return;
+      String category, int booksRead, int totalBooks) async {
+    final user = FirebaseAuth.instance.currentUser;
+    if (user == null) return;
 
-  final now = DateTime.now();
-  final today = DateTime(now.year, now.month, now.day);
-  final userDocRef = FirebaseFirestore.instance.collection('books_read').doc(user.uid);
+    final now = DateTime.now();
+    final today = DateTime(now.year, now.month, now.day);
+    final userDocRef =
+        FirebaseFirestore.instance.collection('books_read').doc(user.uid);
 
-  final snapshot = await userDocRef.get();
-  final data = snapshot.data();
+    final snapshot = await userDocRef.get();
+    final data = snapshot.data();
 
-  List<Map<String, dynamic>> listDate = [];
+    List<Map<String, dynamic>> listDate = [];
 
-  if (data != null && data.containsKey('listdate')) {
-    listDate = (data['listdate'] as List)
-        .map((e) => Map<String, dynamic>.from(e))
-        .toList();
+    if (data != null && data.containsKey('listdate')) {
+      listDate = (data['listdate'] as List)
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList();
 
-    final index = listDate.indexWhere((element) {
-      final ddate = (element['timestamp'] as Timestamp).toDate();
-      final ddateOnly = DateTime(ddate.year, ddate.month, ddate.day);
-      return ddateOnly == today;
+      final index = listDate.indexWhere((element) {
+        final ddate = (element['timestamp'] as Timestamp).toDate();
+        final ddateOnly = DateTime(ddate.year, ddate.month, ddate.day);
+        return ddateOnly == today;
+      });
+
+      if (index != -1) {
+        listDate[index]['booksRead'] += booksRead;
+      } else {
+        listDate.add({
+          'timestamp': Timestamp.fromDate(now),
+          'booksRead': booksRead,
+        });
+      }
+    } else {
+      // First-time user or empty list
+      listDate = [
+        {
+          'timestamp': Timestamp.fromDate(now),
+          'booksRead': booksRead,
+        }
+      ];
+    }
+
+    await userDocRef.set({
+      'timestamp': Timestamp.fromDate(now),
+      'booksRead': totalBooks,
+      'category': category,
+      'bookID': book!.bk_ID,
+      'listdate': listDate,
     });
 
-    if (index != -1) {
-      listDate[index]['booksRead'] += booksRead;
-    } else {
-      listDate.add({
-        'timestamp': Timestamp.fromDate(now),
-        'booksRead': booksRead,
-      });
-    }
-  } else {
-    // First-time user or empty list
-    listDate = [
-      {
-        'timestamp': Timestamp.fromDate(now),
-        'booksRead': booksRead,
-      }
-    ];
+    print("📚 Book read data updated successfully.");
   }
-
-  await userDocRef.set({
-    'timestamp': Timestamp.fromDate(now),
-    'booksRead': totalBooks,
-    'category': category,
-    'bookID': book!.bk_ID,
-    'listdate': listDate,
-  });
-
-  print("📚 Book read data updated successfully.");
-}
-
 
   // ignore: always_declare_return_types, inference_failure_on_function_return_type
   initHiveStorage(Book? book) async {
@@ -757,7 +758,7 @@ class _BookDetailPageState extends State<BookDetailPage>
                   collapsedBackgroundColor: themeProv.isDarkTheme!
                       ? Colors.white.withOpacity(0.09)
                       : ColorDark.background.withOpacity(0.09),
-                  showTrailingIcon: true,
+                  // showTrailingIcon: true,
                   initiallyExpanded: false,
                   collapsedIconColor: themeProv.isDarkTheme!
                       ? Colors.white
@@ -814,7 +815,7 @@ class _BookDetailPageState extends State<BookDetailPage>
                       collapsedBackgroundColor: themeProv.isDarkTheme!
                           ? Colors.white.withOpacity(0.09)
                           : ColorDark.background.withOpacity(0.09),
-                      showTrailingIcon: true,
+                      // showTrailingIcon: true,
                       initiallyExpanded: false,
                       collapsedIconColor: themeProv.isDarkTheme!
                           ? Colors.white
@@ -875,23 +876,27 @@ class _BookDetailPageState extends State<BookDetailPage>
                               ? Colors.white.withOpacity(0.09)
                               : ColorDark.background.withOpacity(0.09)
                           : Colors.transparent,
-                  showTrailingIcon:
-                      book!.genres[0]['gn_Title'] == 'Fiction' ? true : false,
+                  trailing: book!.genres[0]['gn_Title'] == 'Fiction'
+                      ? null // Use default arrow
+                      : const SizedBox.shrink(), // Hide arrow
                   initiallyExpanded: false,
                   collapsedIconColor: themeProv.isDarkTheme!
                       ? Colors.white
                       : ColorDark.background,
                   title: Text(
-                      book!.genres[0]['gn_Title'] == 'Fiction'
-                          ? LanguageStatus == 'en'
-                              ? 'Characters'
-                              : 'الشخصيات'
-                          : '', //AppLocalizations.of(context)!.characters,
-                      textAlign: LanguageStatus == 'ar'
-                          ? TextAlign.right
-                          : TextAlign.left,
-                      style: theme.textTheme.headlineLarge!
-                          .copyWith(fontSize: 23, fontWeight: FontWeight.w500)),
+                    book!.genres[0]['gn_Title'] == 'Fiction'
+                        ? LanguageStatus == 'en'
+                            ? 'Characters'
+                            : 'الشخصيات'
+                        : '',
+                    textAlign: LanguageStatus == 'ar'
+                        ? TextAlign.right
+                        : TextAlign.left,
+                    style: theme.textTheme.headlineLarge!.copyWith(
+                      fontSize: 23,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
                   children: [
                     Html(
                       data: book!.genres[0]['gn_Title'] == 'Fiction'
@@ -909,17 +914,6 @@ class _BookDetailPageState extends State<BookDetailPage>
                         ),
                       },
                     ),
-                    // Text(
-                    //     book!.genres[0]['gn_Title'] == 'Fiction'
-                    //         ? LanguageStatus == 'ar'
-                    //             ? book!.bk_Characters_Ar!
-                    //             : book!.bk_Characters!
-                    //         : '',
-                    //     textAlign: LanguageStatus == 'ar'
-                    //         ? TextAlign.right
-                    //         : TextAlign.left,
-                    //     style: theme.textTheme.bodyLarge!.copyWith(
-                    //         fontSize: 18, fontWeight: FontWeight.w500)),
                   ],
                 ),
               ),
@@ -1023,7 +1017,7 @@ class _BookDetailPageState extends State<BookDetailPage>
                           at_Name: e['at_Name'],
                           at_Name_Ar: e['at_Name_Ar'],
                           imagePath:
-                              'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/${e['md_ID']}',
+                              'https://getejaz.com/api/ejaz/v1/Medium/getImage/${e['md_ID']}',
                           isDarkMode: false);
 
                       Get.toNamed(Routes.authors, arguments: authors);
@@ -1035,7 +1029,7 @@ class _BookDetailPageState extends State<BookDetailPage>
                         // left: i++ * 30,
                         child: CircleAvatar(
                           backgroundImage: NetworkImage(
-                              'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/${e['md_ID']}'),
+                              'https://getejaz.com/api/ejaz/v1/Medium/getImage/${e['md_ID']}'),
                           radius: 30,
                         )),
                   ))
@@ -1062,7 +1056,7 @@ class _BookDetailPageState extends State<BookDetailPage>
                                 at_Name: e['at_Name'],
                                 at_Name_Ar: e['at_Name_Ar'],
                                 imagePath:
-                                    'https://ejaz.applab.qa/api/ejaz/v1/Medium/getImage/${e['md_ID']}',
+                                    'https://getejaz.com/api/ejaz/v1/Medium/getImage/${e['md_ID']}',
                                 isDarkMode: false);
 
                             Get.toNamed(Routes.authors, arguments: authors);

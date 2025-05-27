@@ -1,6 +1,7 @@
 // import 'package:cached_network_image/cached_network_image.dart';
 // import 'package:ejazapp/providers/locale_provider.dart';
-// import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+// import 'package:ejazapp/l10n/app_localizations.dart';
+
 // import 'package:ejazapp/data/models/audio.dart';
 // import 'package:ejazapp/data/models/book.dart';
 // import 'package:ejazapp/data/models/playlist.dart';
@@ -372,7 +373,7 @@
 //                                       itemBuilder: (context, index) {
 //                                         Book book;
 //                                         String emptyAudioUrl =
-//                                             "https://ejaz.applab.qa/api/ejaz/v1/Medium/getAudio/00000000-0000-0000-0000-000000000000";
+//                                             "https://getejaz.com/api/ejaz/v1/Medium/getAudio/00000000-0000-0000-0000-000000000000";
 
 //                                         if (AudioList[index].audioEn !=
 //                                                 emptyAudioUrl ||
@@ -570,7 +571,8 @@ import 'dart:convert';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'package:ejazapp/connectapi/linkapi.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 import 'package:ejazapp/data/models/audio.dart';
 import 'package:ejazapp/data/models/book.dart';
 import 'package:ejazapp/data/models/playlist.dart';

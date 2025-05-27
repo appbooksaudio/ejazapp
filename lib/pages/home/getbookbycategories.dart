@@ -11,7 +11,8 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 
 class HomePageTabBar extends StatefulWidget {
   const HomePageTabBar({super.key, required this.controller});
@@ -57,6 +58,8 @@ class _HomePageState extends State<HomePageTabBar>
       print('Error fetching categories: $error');
     });
   }
+
+ 
 
   @override
   void dispose() {

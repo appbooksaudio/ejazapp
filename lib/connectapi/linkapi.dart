@@ -3,10 +3,10 @@ class AppLink {
   //Test
   static const String test = 'https://jsonplaceholder.typicode.com/posts';
 // server App
-  static const String server = 'https://ejaz.applab.qa/api/ejaz/v1';
+  static const String server = 'https://getejaz.com/api/ejaz/v1';
 
   static const String imageststatic =
-      'https://ejaz.applab.qa/api/ejaz/v1/Book/getBooks';//https://ejaz-api.azurewebsites.net  (Azure server with credential --whsini@hbku.edu.qa--)
+      'https://getejaz.com/api/ejaz/v1/Book/getBooks';//https://ejaz-api.azurewebsites.net  (Azure server with credential --whsini@hbku.edu.qa--)
 
 //========================== Image ============================
   static const String imagestCategories = '$imageststatic/categories';

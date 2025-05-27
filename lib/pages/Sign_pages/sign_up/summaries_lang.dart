@@ -6,7 +6,8 @@ import 'package:ejazapp/helpers/routes.dart';
 import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/widgets/custom_elevated_button.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 import 'package:get/get.dart';
 import 'package:percent_indicator/percent_indicator.dart';
 import 'package:provider/provider.dart';

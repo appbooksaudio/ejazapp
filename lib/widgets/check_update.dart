@@ -8,38 +8,51 @@ import 'package:package_info_plus/package_info_plus.dart';
 import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 import 'package:http/http.dart' as http;
+import 'package:firebase_remote_config/firebase_remote_config.dart';
+
+bool _hasSkippedUpdate = false; // Session flag
 
 Future<void> checkForUpdate(BuildContext context) async {
+  if (_hasSkippedUpdate) return; // Skip if user tapped "Later"
   try {
-     // Ensure it runs only on Android
-    if (!Platform.isAndroid) {
-      print("Skipping update check (not Android)");
+    final remoteConfig = FirebaseRemoteConfig.instance;
+    // Set config settings to allow immediate fetching
+    await remoteConfig.setConfigSettings(RemoteConfigSettings(
+      fetchTimeout: Duration(seconds: 10),
+      minimumFetchInterval: Duration.zero, // <- Force fetch every time
+    ));
+
+    // Fetch and activate
+    await remoteConfig.fetchAndActivate();
+    // Get current app version
+    PackageInfo packageInfo = await PackageInfo.fromPlatform();
+    String currentVersion = packageInfo.version;
+    String packageName = packageInfo.packageName;
+
+    String latestVersion = "";
+
+    if (Platform.isAndroid) {
+      latestVersion = await getLatestVersionFromGooglePlay(packageName);
+    } else if (Platform.isIOS) {
+      latestVersion = remoteConfig.getString('minimum_ios_version');
+    } else {
+      print("Unsupported platform");
       return;
     }
-    // Get the installed app version
-    PackageInfo packageInfo = await PackageInfo.fromPlatform();
-    String currentVersion = packageInfo.version; // Example: "1.0.0"
-    String packageName = packageInfo.packageName; // Your app's package name
-    print("current version is ${currentVersion}");
-    // Get latest version from Google Play Store or Apple App Store
-    String latestVersion = Platform.isAndroid
-        ? await getLatestVersionFromGooglePlay(packageName)
-        : await getLatestVersionFromAppleStore(
-            "6450498323"); //com.ejazapphbku.ejazapp Replace with your Apple App ID
-    print("latestVersion version is ${latestVersion}");
-    // Compare versions
+
+    print("Current version: $currentVersion");
+    print("Latest version: $latestVersion");
+
     if (_isNewVersionAvailable(currentVersion, latestVersion)) {
-      // Get Provider values BEFORE calling the function
       final localprovider = Provider.of<LocaleProvider>(context, listen: false);
       final themeProv = Provider.of<ThemeProvider>(context, listen: false);
       _showUpdateDialog(context, localprovider, themeProv);
     }
   } catch (e) {
-    print("Error checking update: $e");
+    print("Error checking for update: $e");
   }
 }
 
-// Fetch latest version from Google Play Store
 Future<String> getLatestVersionFromGooglePlay(String packageName) async {
   final url =
       "https://play.google.com/store/apps/details?id=$packageName&hl=en";
@@ -52,25 +65,10 @@ Future<String> getLatestVersionFromGooglePlay(String packageName) async {
       return match.group(1)!;
     }
   }
-  throw Exception("Failed to fetch version from Play Store");
+  throw Exception("Failed to fetch version from Google Play");
 }
 
-// Fetch latest version from Apple App Store
-Future<String> getLatestVersionFromAppleStore(String appId) async {
-  final url = 'https://itunes.apple.com/lookup?bundleId=$appId&timestamp=${DateTime.now().millisecondsSinceEpoch}';
-  final response = await http.get(Uri.parse(url));
-
-  if (response.statusCode == 200) {
-    final json = jsonDecode(response.body);
-    if (json["resultCount"] > 0) {
-      return json["results"][0]["version"];
-    }
-  }
-  throw Exception("Failed to fetch version from Apple Store");
-}
-
-// Function to compare versions
- bool _isNewVersionAvailable(String currentVersion, String storeVersion) {
+bool _isNewVersionAvailable(String currentVersion, String storeVersion) {
   List<int> current = currentVersion.split('.').map(int.parse).toList();
   List<int> store = storeVersion.split('.').map(int.parse).toList();
 
@@ -87,37 +85,29 @@ Future<String> getLatestVersionFromAppleStore(String appId) async {
 
 void _showUpdateDialog(BuildContext context, LocaleProvider localprovider,
     ThemeProvider themeProv) {
-  // Detect device language
-  bool isArabic = localprovider.localelang!.languageCode == "ar";
+  bool isArabic = localprovider.localelang?.languageCode == "ar";
+
   showDialog(
     context: context,
-    barrierDismissible: false, // Prevent closing when tapping outside
+    barrierDismissible: false,
     builder: (BuildContext context) {
       return Directionality(
-        textDirection: isArabic
-            ? TextDirection.rtl
-            : TextDirection.ltr, // Set text direction
+        textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
         child: Dialog(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(20.0)), // Rounded corners
+          shape:
+              RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
           child: Padding(
-            padding: const EdgeInsets.all(20.0),
+            padding: const EdgeInsets.all(20),
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                // Update Illustration
                 CircleAvatar(
                   radius: 40,
                   backgroundColor: Colors.grey.shade200,
-                  child: Icon(
-                    Icons.system_update,
-                    size: 50,
-                    color: Colors.black,
-                  ),
+                  child:
+                      Icon(Icons.system_update, size: 50, color: Colors.black),
                 ),
                 SizedBox(height: 20),
-
-                // Title
                 Text(
                   isArabic ? "تحديث متوفر" : "Update Available",
                   style: TextStyle(
@@ -129,12 +119,10 @@ void _showUpdateDialog(BuildContext context, LocaleProvider localprovider,
                   ),
                 ),
                 const SizedBox(height: 10),
-
-                // Description
                 Text(
                   isArabic
-                      ? "يتوفر إصدار جديد من هذا التطبيق. يرجى التحديث الآن للحصول على أحدث الميزات والتحسينات."
-                      : "A new version of this app is available. Please update now for the latest features and improvements.",
+                      ? "يتوفر إصدار جديد من هذا التطبيق. يرجى التحديث الآن."
+                      : "A new version of this app is available. Please update now.",
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 16,
@@ -144,14 +132,13 @@ void _showUpdateDialog(BuildContext context, LocaleProvider localprovider,
                   ),
                 ),
                 const SizedBox(height: 20),
-
-                // Buttons
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     TextButton(
                       onPressed: () {
-                        Navigator.of(context).pop(); // Close dialog
+                        _hasSkippedUpdate = true;
+                        Navigator.of(context).pop();
                       },
                       child: Text(
                         isArabic ? "لاحقاً" : "Later",
@@ -164,14 +151,11 @@ void _showUpdateDialog(BuildContext context, LocaleProvider localprovider,
                       ),
                     ),
                     ElevatedButton(
-                      onPressed: () {
-                        _launchStore(); // Open the app store
-                      },
+                      onPressed: _launchStore,
                       style: ElevatedButton.styleFrom(
-                        backgroundColor: Colors.blue, // Primary color
+                        backgroundColor: Colors.blue,
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
+                            borderRadius: BorderRadius.circular(10)),
                         padding:
                             EdgeInsets.symmetric(horizontal: 20, vertical: 10),
                       ),
@@ -196,17 +180,15 @@ void _showUpdateDialog(BuildContext context, LocaleProvider localprovider,
   );
 }
 
-// Function to open the Google Play Store or Apple App Store
 void _launchStore() async {
-  String googlePlayUrl =
-      "https://play.google.com/store/apps/details?id=com.ejazapphbku.ejazapp"; // Change to your package name
-  String appleStoreUrl =
-      "https://apps.apple.com/app/ejaz-books/id6450498323"; // Replace with your Apple App ID
+  String androidUrl =
+      "https://play.google.com/store/apps/details?id=com.ejazapphbku.ejazapp";
+  String iosUrl = "https://apps.apple.com/app/ejaz-books/id6450498323";
 
-  String storeUrl = Platform.isAndroid ? googlePlayUrl : appleStoreUrl;
+  String url = Platform.isIOS ? iosUrl : androidUrl;
 
-  if (await canLaunch(storeUrl)) {
-    await launch(storeUrl);
+  if (await canLaunch(url)) {
+    await launch(url);
   } else {
     throw "Could not launch store link";
   }

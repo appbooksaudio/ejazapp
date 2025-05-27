@@ -5,7 +5,8 @@ import 'package:ejazapp/pages/home/stories/addpost_text.dart';
 import 'package:flutter/material.dart';
 import 'package:photo_manager/photo_manager.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 import '../../../providers/theme_provider.dart';
 
 class AddPost extends StatefulWidget {

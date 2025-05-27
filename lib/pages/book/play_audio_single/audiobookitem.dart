@@ -182,7 +182,7 @@ class AudioBookState extends State<AudioBook> {
                         //*********** new Initilaze for Audio player **********************//
                       },
                       style: ButtonStyle(
-                        backgroundColor: WidgetStateProperty.all(
+                        backgroundColor: MaterialStateProperty.all(
                           themeProv.isDarkTheme!
                               ? ColorDark.background
                               : Colors.white,

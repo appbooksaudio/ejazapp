@@ -91,7 +91,7 @@ Page resource error:
         },
       )
       ..loadRequest(
-          Uri.parse('https://ejaz.applab.qa/api/privacy-policy.html'));
+          Uri.parse('https://getejaz.com/api/privacy-policy.html'));
 
     // #docregion platform_features
     if (controller.platform is AndroidWebViewController) {

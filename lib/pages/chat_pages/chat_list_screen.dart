@@ -16,7 +16,8 @@ import '../../helpers/routes.dart';
 import '../../providers/theme_provider.dart';
 import '../../widgets/chat_list/chat_category_button.dart';
 import '../../widgets/rectangularButton.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 
 class ChatListScreen extends StatefulWidget {
   const ChatListScreen({super.key});

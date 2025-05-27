@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 
 import 'package:ejazapp/helpers/constants.dart';
 import 'package:ejazapp/pages/payment/in_progress/in_progress_tab.dart';

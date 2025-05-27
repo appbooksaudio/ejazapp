@@ -8,7 +8,8 @@ import 'package:ejazapp/providers/locale_provider.dart';
 import 'package:ejazapp/providers/theme_provider.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:my_fatoorah/my_fatoorah.dart';

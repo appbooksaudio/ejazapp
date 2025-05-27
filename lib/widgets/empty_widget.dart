@@ -4,7 +4,8 @@ import 'package:ejazapp/helpers/routes.dart';
 import 'package:ejazapp/widgets/custom_elevated_button.dart';
 import 'package:get/get.dart';
 import 'package:lottie/lottie.dart';
-import 'package:flutter_gen/gen_l10n/app_localizations.dart';
+import 'package:ejazapp/l10n/app_localizations.dart';
+
 
 class EmptyWidget extends StatelessWidget {
   const EmptyWidget({
