@@ -82,16 +82,16 @@ List<GetPage<dynamic>> allPages = [
     name: Routes.explore,
     page: () => const BottomNavPage(initialIndex: 1),
   ),
-  //  GetPage(
-  //   name: Routes.chatList,
-  //   page: () => const BottomNavPage(initialIndex: 2),
-  // ),
+   GetPage(
+    name: Routes.chatList,
+    page: () => const BottomNavPage(initialIndex: 2),
+  ),
   GetPage(
       name: Routes.createshowList,
-      page: () => const BottomNavPage(initialIndex: 2)),
+      page: () => const BottomNavPage(initialIndex: 3)),
   GetPage(
     name: Routes.profile,
-    page: () => const BottomNavPage(initialIndex: 3),
+    page: () => const BottomNavPage(initialIndex: 4),
   ),
   GetPage(name: Routes.bookdetail, page: () => const BookDetailPage()),
   GetPage(name: Routes.checkout, page: () => const CheckoutPage()),
@@ -162,10 +162,10 @@ List<GetPage<dynamic>> allPages = [
     name: Routes.imageView,
     page: () => ImageScreen(),
   ),
-  //  GetPage(
-  //   name: Routes.roomChat,
-  //   page: () => ChatPage(room:Get.arguments[0],user: Get.arguments[1],),
-  // ),
+   GetPage(
+    name: Routes.roomChat,
+    page: () => ChatPage(room:Get.arguments[0],user: Get.arguments[1],),
+  ),
   GetPage(
     name: Routes.groupchat,
     page: () => GroupChatScreen(groupId: Get.arguments[1],),

@@ -89,7 +89,7 @@ class _BottomNavPageState extends State<BottomNavPage> {
               // GeminiChat(),
               // AddPost(),
               //ListBook(),
-              // ChatListScreen(),
+               ChatListScreen(),
               Create_showList(),
               // OrderPage(),
               ProfilePage(),
@@ -256,12 +256,12 @@ class _BottomNavPageState extends State<BottomNavPage> {
                   child: Icon(Feather.search)),
               label: AppLocalizations.of(context)!.explore,
             ),
-            //   BottomNavigationBarItem(
-            //   icon:Container(
-            //       padding: EdgeInsets.symmetric(vertical: 7),
-            //       child: Icon(Feather.message_circle) ),
-            //   label:AppLocalizations.of(context)!.message,
-            // ),
+              BottomNavigationBarItem(
+              icon:Container(
+                  padding: EdgeInsets.symmetric(vertical: 7),
+                  child: Icon(Feather.message_circle) ),
+              label:AppLocalizations.of(context)!.message,
+            ),
 //              BottomNavigationBarItem(
 //               icon:Container(
 //               padding: EdgeInsets.symmetric(vertical: 7),
