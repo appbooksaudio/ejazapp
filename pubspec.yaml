@@ -1,0 +1,66 @@
+name: chat_app
+description: A modern chat application built with Flutter and Firebase.
+
+# Prevents accidental publishing to pub.dev
+publish_to: 'none'
+
+# App versioning
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.8.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+    
+
+  # Firebase Core Services
+  cloud_firestore: ^4.0.0
+  firebase_auth: ^4.0.0
+  firebase_storage: ^11.0.0
+
+  # Chat UI & Backend Integration
+  flutter_chat_ui: ^1.6.5
+  flutter_chat_types: ^3.6.2
+  flutter_firebase_chat_core: ^1.6.4
+  google_fonts: ^4.0.4
+  cached_network_image: ^3.2.3  # or latest version
+  flutter_vector_icons: ^2.0.0
+  # File & Media
+  image_picker: ^1.0.4
+  file_picker: ^10.1.9
+  open_filex: ^4.0.2
+  mime: ^1.0.4
+  path_provider: ^2.0.15
+  provider: ^6.0.5
+
+  # Utility & State Management
+  get: ^4.6.5
+  http: ^0.13.5
+
+  # Cupertino icons (iOS-style)
+  cupertino_icons: ^1.0.8
+  flutter_localizations:
+    sdk: flutter
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.1 # use latest compatible lints with Dart 3.8
+
+flutter:
+  uses-material-design: true
+
+  # Uncomment and list your assets if you use images or other files
+  # assets:
+  #   - assets/images/
+  #   - assets/icons/
+
+  # Custom fonts can be declared here
+  # fonts:
+  #   - family: YourFontFamily
+  #     fonts:
+  #       - asset: fonts/YourFont-Regular.ttf
+  #       - asset: fonts/YourFont-Bold.ttf
+  #         weight: 700
